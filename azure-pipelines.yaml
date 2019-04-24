@@ -1,0 +1,19 @@
+pool:
+  vmImage: 'ubuntu-16.04'
+
+steps:
+  - task: Gradle@2
+    inputs:
+      jdkVersionOption: 1.11
+
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(system.defaultworkingdirectory)'
+      contents: 'build/distributions/*'
+      targetFolder: $(Build.ArtifactStagingDirectory)
+      flattenFolders: true
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: zpa-cli
