@@ -30,7 +30,7 @@ import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 class Main : CliktCommand(name = "zpa-cli") {
     private val sources by option(help = "Folder with files").required()
     private val formsMetadata by option(help = "Oracle Forms metadata file").default("")
-    private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg")
+    private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps")
     private val output by option(help = "Output filename").default("zpa-issues.json")
 
     override fun run() {
