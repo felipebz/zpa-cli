@@ -35,6 +35,7 @@ sonar-scanner -Dsonar.projectKey=utPLSQL-zpa-demo \
     -Dsonar.externalIssuesReportPaths=zpa-issues.json \
     -Dsonar.pullrequest.provider= \
     -Dsonar.coverageReportPaths= \
-    -Dsonar.testExecutionReportPaths=
+    -Dsonar.testExecutionReportPaths= \
+    -Dsonar.plsql.file.suffixes=sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg
 
 rm -rf zpa-issues.json .scannerwork/
