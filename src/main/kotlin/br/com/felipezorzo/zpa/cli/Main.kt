@@ -13,9 +13,9 @@ import com.google.gson.Gson
 import com.sonar.sslr.api.RecognitionException
 import org.sonar.plsqlopen.FormsMetadataAwareCheck
 import org.sonar.plsqlopen.checks.CheckList
+import org.sonar.plsqlopen.getSemanticNode
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.parser.PlSqlParser
-import org.sonar.plsqlopen.squid.PlSqlAstScanner
 import org.sonar.plsqlopen.squid.PlSqlAstWalker
 import org.sonar.plsqlopen.squid.PlSqlConfiguration
 import org.sonar.plsqlopen.symbols.DefaultTypeSolver
@@ -61,7 +61,7 @@ class Main : CliktCommand(name = "zpa-cli") {
             val relativeFilePathStr = relativeFilePath.toString().replace('\\', '/')
 
             val visitorContext = try {
-                val tree = PlSqlAstScanner.getSemanticNode(parser.parse(file.contents()))
+                val tree = getSemanticNode(parser.parse(file.contents()))
                 PlSqlVisitorContext(tree, file, metadata)
             } catch (e: RecognitionException) {
                 PlSqlVisitorContext(file, e, metadata)

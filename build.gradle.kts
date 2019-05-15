@@ -12,6 +12,7 @@ tasks.withType<KotlinJvmCompile> {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     jcenter()
     maven { setUrl("https://oss.jfrog.org/artifactory/oss-snapshot-local") }
@@ -19,8 +20,12 @@ repositories {
 
 dependencies {
     implementation("com.github.ajalt:clikt:1.7.0")
-    implementation("org.sonar.plsqlopen:plsql-frontend:2.4.0-SNAPSHOT")
-    implementation("org.sonar.plsqlopen:plsql-checks:2.4.0-SNAPSHOT")
+    implementation("org.sonar.plsqlopen:plsql-frontend:2.4.0-SNAPSHOT") {
+        exclude("org.sonarsource.sonarqube", "sonar-plugin-api")
+    }
+    implementation("org.sonar.plsqlopen:plsql-checks:2.4.0-SNAPSHOT") {
+        exclude("org.sonarsource.sonarqube", "sonar-plugin-api")
+    }
     implementation(kotlin("stdlib-jdk8"))
     testImplementation(kotlin("test"))
 }
