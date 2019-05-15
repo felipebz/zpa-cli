@@ -20,9 +20,7 @@ repositories {
 
 dependencies {
     implementation("com.github.ajalt:clikt:1.7.0")
-    implementation("org.sonar.plsqlopen:plsql-frontend:2.4.0-SNAPSHOT") {
-        exclude("org.sonarsource.sonarqube", "sonar-plugin-api")
-    }
+    implementation("org.sonar.plsqlopen:zpa-core:2.4.0-SNAPSHOT")
     implementation("org.sonar.plsqlopen:plsql-checks:2.4.0-SNAPSHOT") {
         exclude("org.sonarsource.sonarqube", "sonar-plugin-api")
     }
