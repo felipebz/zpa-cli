@@ -67,7 +67,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                 PlSqlVisitorContext(file, e, metadata)
             }
 
-            val defaultChecks = CheckList.getChecks()
+            val defaultChecks = CheckList.checks
                     .map { it.getConstructor().newInstance() as PlSqlCheck }
                     .filter { metadata != null || it !is FormsMetadataAwareCheck }
                     .toTypedArray()
