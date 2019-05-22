@@ -1,5 +1,7 @@
 package br.com.felipezorzo.zpa.cli
 
+import br.com.felipezorzo.zpa.cli.repository.ActiveRules
+import br.com.felipezorzo.zpa.cli.repository.Repository
 import br.com.felipezorzo.zpa.cli.sqissue.GenericIssueData
 import br.com.felipezorzo.zpa.cli.sqissue.PrimaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.SecondaryLocation
@@ -11,17 +13,22 @@ import com.github.ajalt.clikt.parameters.options.required
 import com.google.common.base.Stopwatch
 import com.google.gson.Gson
 import com.sonar.sslr.api.RecognitionException
-import org.sonar.plsqlopen.FormsMetadataAwareCheck
+import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
 import org.sonar.plsqlopen.checks.CheckList
 import org.sonar.plsqlopen.getSemanticNode
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.parser.PlSqlParser
+import org.sonar.plsqlopen.rules.RuleMetadataLoader
+import org.sonar.plsqlopen.rules.ZpaChecks
+import org.sonar.plsqlopen.rules.ZpaRule
+import org.sonar.plsqlopen.rules.ZpaRuleKey
 import org.sonar.plsqlopen.squid.PlSqlAstWalker
 import org.sonar.plsqlopen.squid.PlSqlConfiguration
 import org.sonar.plsqlopen.symbols.DefaultTypeSolver
 import org.sonar.plsqlopen.symbols.SymbolVisitor
 import org.sonar.plugins.plsqlopen.api.PlSqlVisitorContext
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlCheck
+import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
@@ -41,6 +48,15 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val baseDir = File(sources).absoluteFile
         val baseDirPath = baseDir.toPath()
+
+        val repository = Repository()
+        val ruleMetadataLoader = RuleMetadataLoader()
+        CustomAnnotationBasedRulesDefinition.load(repository, "zpa", CheckList.checks, ruleMetadataLoader)
+
+        val activeRules = ActiveRules(repository)
+
+        val checks = ZpaChecks<PlSqlVisitor>(activeRules, "zpa", ruleMetadataLoader)
+                .addAnnotatedChecks(CheckList.checks)
 
         val files = baseDir
                 .walkTopDown()
@@ -67,53 +83,58 @@ class Main : CliktCommand(name = "zpa-cli") {
                 PlSqlVisitorContext(file, e, metadata)
             }
 
-            val defaultChecks = CheckList.checks
+            /*val defaultChecks = CheckList.checks
                     .map { it.getConstructor().newInstance() as PlSqlCheck }
                     .filter { metadata != null || it !is FormsMetadataAwareCheck }
-                    .toTypedArray()
+                    .toTypedArray()*/
 
             val visitors = listOf(
                     SymbolVisitor(DefaultTypeSolver()),
-                    *defaultChecks)
+                    *checks.all().toTypedArray())
 
             val walker = PlSqlAstWalker(visitors)
             walker.walk(visitorContext)
 
-            for (issue in visitors.flatMap { it.issues() }) {
-                val issuePrimaryLocation = issue.primaryLocation()
+            for (visitor in visitors) {
+                for (issue in (visitor as PlSqlCheck).issues()) {
+                    val issuePrimaryLocation = issue.primaryLocation()
 
-                val primaryLocation = PrimaryLocation(
-                        issuePrimaryLocation.message(),
-                        relativeFilePathStr,
-                        createTextRange(
-                                issuePrimaryLocation.startLine(),
-                                issuePrimaryLocation.endLine(),
-                                issuePrimaryLocation.startLineOffset(),
-                                issuePrimaryLocation.endLineOffset())
-                        )
-
-                val secondaryLocations = mutableListOf<SecondaryLocation>()
-
-                for (secondary in issue.secondaryLocations()) {
-                    secondaryLocations += SecondaryLocation(
-                            secondary.message(),
+                    val primaryLocation = PrimaryLocation(
+                            issuePrimaryLocation.message(),
                             relativeFilePathStr,
                             createTextRange(
-                                    secondary.startLine(),
-                                    secondary.endLine(),
-                                    secondary.startLineOffset(),
-                                    secondary.endLineOffset())
+                                    issuePrimaryLocation.startLine(),
+                                    issuePrimaryLocation.endLine(),
+                                    issuePrimaryLocation.startLineOffset(),
+                                    issuePrimaryLocation.endLineOffset())
+                    )
+
+                    val secondaryLocations = mutableListOf<SecondaryLocation>()
+
+                    for (secondary in issue.secondaryLocations()) {
+                        secondaryLocations += SecondaryLocation(
+                                secondary.message(),
+                                relativeFilePathStr,
+                                createTextRange(
+                                        secondary.startLine(),
+                                        secondary.endLine(),
+                                        secondary.startLineOffset(),
+                                        secondary.endLineOffset())
+                        )
+                    }
+
+                    val ruleKey = checks.ruleKey(visitor) as ZpaRuleKey
+                    val rule = repository.rule(ruleKey.rule()) as ZpaRule
+
+                    genericIssues += GenericIssue(
+                            ruleId = rule.key,
+                            severity = rule.severity,
+                            type = "BUG", // TODO load from the rule metadata
+                            primaryLocation = primaryLocation,
+                            effortMinutes = 1, // TODO load from the rule metadata'
+                            secondaryLocations = secondaryLocations
                     )
                 }
-
-                genericIssues += GenericIssue(
-                        ruleId = "rule", // TODO load from the rule metadata
-                        severity = "INFO", // TODO load from the rule metadata
-                        type = "BUG", // TODO load from the rule metadata
-                        primaryLocation = primaryLocation,
-                        effortMinutes = 1, // TODO load from the rule metadata'
-                        secondaryLocations = secondaryLocations
-                )
             }
         }
 
