@@ -123,10 +123,16 @@ class Main : CliktCommand(name = "zpa-cli") {
                     val ruleKey = checks.ruleKey(visitor) as ZpaRuleKey
                     val rule = repository.rule(ruleKey.rule()) as ZpaRule
 
+                    val type = when {
+                        rule.tags.contains("vulnerability") -> "VULNERABILITY"
+                        rule.tags.contains("bug") -> "BUG"
+                        else -> "CODE_SMELL"
+                    }
+
                     genericIssues += GenericIssue(
                             ruleId = rule.key,
                             severity = rule.severity,
-                            type = "BUG", // TODO load from the rule metadata
+                            type = type,
                             primaryLocation = primaryLocation,
                             duration = rule.remediationConstant,
                             secondaryLocations = secondaryLocations
