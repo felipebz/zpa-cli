@@ -24,6 +24,7 @@ import org.sonar.plsqlopen.rules.ZpaRule
 import org.sonar.plsqlopen.rules.ZpaRuleKey
 import org.sonar.plsqlopen.squid.PlSqlAstWalker
 import org.sonar.plsqlopen.squid.PlSqlConfiguration
+import org.sonar.plsqlopen.squid.ProgressReport
 import org.sonar.plsqlopen.symbols.DefaultTypeSolver
 import org.sonar.plsqlopen.symbols.SymbolVisitor
 import org.sonar.plugins.plsqlopen.api.PlSqlVisitorContext
@@ -31,7 +32,7 @@ import org.sonar.plugins.plsqlopen.api.checks.PlSqlCheck
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.Paths
+import java.util.concurrent.TimeUnit
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
 class Main : CliktCommand(name = "zpa-cli") {
@@ -61,7 +62,7 @@ class Main : CliktCommand(name = "zpa-cli") {
         val files = baseDir
                 .walkTopDown()
                 .filter { it.isFile && extensions.contains(it.extension.toLowerCase()) }
-                .map { InputFile(it, StandardCharsets.UTF_8) }
+                .map { InputFile(baseDirPath, it, StandardCharsets.UTF_8) }
                 .toList()
 
         val parser = PlSqlParser.create(PlSqlConfiguration(StandardCharsets.UTF_8))
@@ -71,10 +72,11 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val genericIssues = mutableListOf<GenericIssue>()
 
-        for (file in files) {
-            val relativeFilePath = baseDirPath.relativize(Paths.get(file.absolutePath))
+        val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
+        progressReport.start(files.map { it.pathRelativeToBase }.toList())
 
-            val relativeFilePathStr = relativeFilePath.toString().replace('\\', '/')
+        for (file in files) {
+            val relativeFilePathStr = file.pathRelativeToBase.replace('\\', '/')
 
             val visitorContext = try {
                 val tree = getSemanticNode(parser.parse(file.contents()))
@@ -82,11 +84,6 @@ class Main : CliktCommand(name = "zpa-cli") {
             } catch (e: RecognitionException) {
                 PlSqlVisitorContext(file, e, metadata)
             }
-
-            /*val defaultChecks = CheckList.checks
-                    .map { it.getConstructor().newInstance() as PlSqlCheck }
-                    .filter { metadata != null || it !is FormsMetadataAwareCheck }
-                    .toTypedArray()*/
 
             val visitors = listOf(
                     SymbolVisitor(DefaultTypeSolver()),
@@ -136,7 +133,9 @@ class Main : CliktCommand(name = "zpa-cli") {
                     )
                 }
             }
+            progressReport.nextFile()
         }
+        progressReport.stop()
 
         val genericReport = GenericIssueData(genericIssues)
 
