@@ -131,7 +131,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                             severity = rule.severity,
                             type = "BUG", // TODO load from the rule metadata
                             primaryLocation = primaryLocation,
-                            effortMinutes = 1, // TODO load from the rule metadata'
+                            duration = rule.remediationConstant,
                             secondaryLocations = secondaryLocations
                     )
                 }

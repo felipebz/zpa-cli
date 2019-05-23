@@ -10,9 +10,10 @@ data class Issue(
         val severity: String,
         val type: String,
         val primaryLocation: PrimaryLocation,
-        val effortMinutes: Int,
-        val secondaryLocations: List<SecondaryLocation>
-)
+        private val duration: String,
+        val secondaryLocations: List<SecondaryLocation>) {
+    val effortMinutes: Int = Duration.toMinute(duration)
+}
 
 data class PrimaryLocation(
         val message: String,
