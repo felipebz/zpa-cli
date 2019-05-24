@@ -27,13 +27,16 @@ import org.sonar.plsqlopen.squid.PlSqlConfiguration
 import org.sonar.plsqlopen.squid.ProgressReport
 import org.sonar.plsqlopen.symbols.DefaultTypeSolver
 import org.sonar.plsqlopen.symbols.SymbolVisitor
+import org.sonar.plsqlopen.utils.log.Loggers
 import org.sonar.plugins.plsqlopen.api.PlSqlVisitorContext
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlCheck
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
+import java.util.logging.LogManager
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
+
 
 class Main : CliktCommand(name = "zpa-cli") {
     private val sources by option(help = "Folder with files").required()
@@ -42,6 +45,10 @@ class Main : CliktCommand(name = "zpa-cli") {
     private val output by option(help = "Output filename").default("zpa-issues.json")
 
     override fun run() {
+        javaClass.getResourceAsStream("/logging.properties").use {
+            LogManager.getLogManager().readConfiguration(it)
+        }
+
         val extensions = extensions.split(',')
 
         val stopwatch = Stopwatch()
@@ -67,8 +74,6 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val parser = PlSqlParser.create(PlSqlConfiguration(StandardCharsets.UTF_8))
         val metadata = FormsMetadata.loadFromFile(formsMetadata)
-
-        println("Analyzing ${files.size} files...")
 
         val genericIssues = mutableListOf<GenericIssue>()
 
@@ -150,7 +155,7 @@ class Main : CliktCommand(name = "zpa-cli") {
         val json = gson.toJson(genericReport)
         File(output).writeText(json)
 
-        println("Time elapsed: ${stopwatch.elapsedMillis()} ms")
+        LOG.info("Time elapsed: ${stopwatch.elapsedMillis()} ms")
     }
 
     private fun createTextRange(startLine: Int, endLine: Int, startLineOffset: Int, endLineOffset: Int): TextRange {
@@ -159,6 +164,10 @@ class Main : CliktCommand(name = "zpa-cli") {
                 endLine = if (endLine > -1) endLine else null,
                 startColumn = if (startLineOffset > -1) startLineOffset else null,
                 endColumn = if (endLineOffset > -1) endLineOffset else null)
+    }
+
+    companion object {
+        val LOG = Loggers.getLogger(Main::class.java)
     }
 }
 
