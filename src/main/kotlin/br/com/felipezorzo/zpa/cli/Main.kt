@@ -52,11 +52,11 @@ class Main : CliktCommand(name = "zpa-cli") {
         val baseDir = File(sources).absoluteFile
         val baseDirPath = baseDir.toPath()
 
-        val repository = Repository()
+        val repository = Repository("zpa")
         val ruleMetadataLoader = RuleMetadataLoader()
         CustomAnnotationBasedRulesDefinition.load(repository, "zpa", CheckList.checks, ruleMetadataLoader)
 
-        val activeRules = ActiveRules(repository)
+        val activeRules = ActiveRules().addRepository(repository)
 
         val checks = ZpaChecks<PlSqlVisitor>(activeRules, "zpa", ruleMetadataLoader)
                 .addAnnotatedChecks(CheckList.checks)
