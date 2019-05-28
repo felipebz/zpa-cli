@@ -1,7 +1,5 @@
 package br.com.felipezorzo.zpa.cli
 
-import br.com.felipezorzo.zpa.cli.repository.ActiveRules
-import br.com.felipezorzo.zpa.cli.repository.Repository
 import br.com.felipezorzo.zpa.cli.sqissue.GenericIssueData
 import br.com.felipezorzo.zpa.cli.sqissue.PrimaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.SecondaryLocation
@@ -18,10 +16,7 @@ import org.sonar.plsqlopen.checks.CheckList
 import org.sonar.plsqlopen.getSemanticNode
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.parser.PlSqlParser
-import org.sonar.plsqlopen.rules.RuleMetadataLoader
-import org.sonar.plsqlopen.rules.ZpaChecks
-import org.sonar.plsqlopen.rules.ZpaRule
-import org.sonar.plsqlopen.rules.ZpaRuleKey
+import org.sonar.plsqlopen.rules.*
 import org.sonar.plsqlopen.squid.PlSqlAstWalker
 import org.sonar.plsqlopen.squid.PlSqlConfiguration
 import org.sonar.plsqlopen.squid.ProgressReport
