@@ -6,7 +6,10 @@ import java.nio.charset.Charset
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class InputFile(private val baseDirPath: Path, private val file: File, private val charset: Charset) : PlSqlFile {
+class InputFile(private val type: PlSqlFile.Type,
+                baseDirPath: Path,
+                private val file: File,
+                private val charset: Charset) : PlSqlFile {
 
     override fun contents(): String =
         file.inputStream().use {
@@ -14,6 +17,8 @@ class InputFile(private val baseDirPath: Path, private val file: File, private v
         }
 
     override fun fileName(): String  = file.name
+
+    override fun type(): PlSqlFile.Type = type
 
     val pathRelativeToBase: String = baseDirPath.relativize(Paths.get(file.absolutePath)).toString()
 

@@ -10,20 +10,14 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.google.common.base.Stopwatch
 import com.google.gson.Gson
-import com.sonar.sslr.api.RecognitionException
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
 import org.sonar.plsqlopen.checks.CheckList
-import org.sonar.plsqlopen.getSemanticNode
 import org.sonar.plsqlopen.metadata.FormsMetadata
-import org.sonar.plsqlopen.parser.PlSqlParser
 import org.sonar.plsqlopen.rules.*
-import org.sonar.plsqlopen.squid.PlSqlAstWalker
-import org.sonar.plsqlopen.squid.PlSqlConfiguration
+import org.sonar.plsqlopen.squid.AstScanner
 import org.sonar.plsqlopen.squid.ProgressReport
-import org.sonar.plsqlopen.symbols.DefaultTypeSolver
-import org.sonar.plsqlopen.symbols.SymbolVisitor
 import org.sonar.plsqlopen.utils.log.Loggers
-import org.sonar.plugins.plsqlopen.api.PlSqlVisitorContext
+import org.sonar.plugins.plsqlopen.api.PlSqlFile
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlCheck
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
@@ -64,10 +58,9 @@ class Main : CliktCommand(name = "zpa-cli") {
         val files = baseDir
                 .walkTopDown()
                 .filter { it.isFile && extensions.contains(it.extension.toLowerCase()) }
-                .map { InputFile(baseDirPath, it, StandardCharsets.UTF_8) }
+                .map { InputFile(PlSqlFile.Type.MAIN, baseDirPath, it, StandardCharsets.UTF_8) }
                 .toList()
 
-        val parser = PlSqlParser.create(PlSqlConfiguration(StandardCharsets.UTF_8))
         val metadata = FormsMetadata.loadFromFile(formsMetadata)
 
         val genericIssues = mutableListOf<GenericIssue>()
@@ -75,24 +68,13 @@ class Main : CliktCommand(name = "zpa-cli") {
         val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
         progressReport.start(files.map { it.pathRelativeToBase }.toList())
 
+        val scanner = AstScanner(checks.all(), metadata, true, StandardCharsets.UTF_8)
         for (file in files) {
             val relativeFilePathStr = file.pathRelativeToBase.replace('\\', '/')
 
-            val visitorContext = try {
-                val tree = getSemanticNode(parser.parse(file.contents()))
-                PlSqlVisitorContext(tree, file, metadata)
-            } catch (e: RecognitionException) {
-                PlSqlVisitorContext(file, e, metadata)
-            }
+            scanner.scanFile(file)
 
-            val visitors = listOf(
-                    SymbolVisitor(DefaultTypeSolver()),
-                    *checks.all().toTypedArray())
-
-            val walker = PlSqlAstWalker(visitors)
-            walker.walk(visitorContext)
-
-            for (visitor in visitors) {
+            for (visitor in scanner.executedChecks) {
                 for (issue in (visitor as PlSqlCheck).issues()) {
                     val issuePrimaryLocation = issue.primaryLocation()
 
