@@ -72,9 +72,9 @@ class Main : CliktCommand(name = "zpa-cli") {
         for (file in files) {
             val relativeFilePathStr = file.pathRelativeToBase.replace('\\', '/')
 
-            scanner.scanFile(file)
+            val result = scanner.scanFile(file)
 
-            for (visitor in scanner.executedChecks) {
+            for (visitor in result.executedChecks) {
                 for (issue in (visitor as PlSqlCheck).issues()) {
                     val issuePrimaryLocation = issue.primaryLocation()
 
