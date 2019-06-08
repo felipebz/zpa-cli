@@ -40,8 +40,7 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val extensions = extensions.split(',')
 
-        val stopwatch = Stopwatch()
-        stopwatch.start()
+        val stopwatch = Stopwatch.createStarted()
 
         val baseDir = File(sources).absoluteFile
         val baseDirPath = baseDir.toPath()
@@ -132,7 +131,7 @@ class Main : CliktCommand(name = "zpa-cli") {
         val json = gson.toJson(genericReport)
         File(output).writeText(json)
 
-        LOG.info("Time elapsed: ${stopwatch.elapsedMillis()} ms")
+        LOG.info("Time elapsed: ${stopwatch.elapsed().toMillis()} ms")
     }
 
     private fun createTextRange(startLine: Int, endLine: Int, startLineOffset: Int, endLineOffset: Int): TextRange {

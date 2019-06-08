@@ -22,6 +22,7 @@ dependencies {
     implementation("com.github.ajalt:clikt:1.7.0")
     implementation("org.sonar.plsqlopen:zpa-core:2.4.0-SNAPSHOT")
     implementation("org.sonar.plsqlopen:plsql-checks:2.4.0-SNAPSHOT")
+    implementation("com.google.guava:guava:27.1-jre")
     testImplementation(kotlin("test"))
 }
 
