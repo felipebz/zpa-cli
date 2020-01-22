@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
-    kotlin("jvm") version "1.3.60"
+    kotlin("jvm") version "1.3.61"
     application
 }
 
@@ -19,10 +19,10 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.ajalt:clikt:1.7.0")
+    implementation("com.github.ajalt:clikt:2.3.0")
     implementation("org.sonar.plsqlopen:zpa-core:3.0.0-SNAPSHOT")
     implementation("org.sonar.plsqlopen:plsql-checks:3.0.0-SNAPSHOT")
-    implementation("com.google.guava:guava:27.1-jre")
+    implementation("com.google.guava:guava:28.2-jre")
     testImplementation(kotlin("test"))
 }
 
