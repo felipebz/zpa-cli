@@ -1,7 +1,11 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
+group = "org.zpa"
+version = "1.0.0-SNAPSHOT"
+
 plugins {
-    kotlin("jvm") version "1.3.61"
+    `maven-publish`
+    kotlin("jvm") version "1.3.72"
     application
 }
 
@@ -28,4 +32,32 @@ dependencies {
 
 application {
     mainClassName = "br.com.felipezorzo.zpa.cli.MainKt"
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/felipebz/zpa-cli")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+    }
+    publications {
+        create<MavenPublication>("gpr") {
+            artifactId = "zpa-cli"
+            from(components["java"])
+            artifact(tasks["distZip"])
+            versionMapping {
+                usage("java-api") {
+                    fromResolutionOf("runtimeClasspath")
+                }
+                usage("java-runtime") {
+                    fromResolutionResult()
+                }
+            }
+        }
+    }
 }

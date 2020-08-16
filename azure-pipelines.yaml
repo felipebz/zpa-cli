@@ -8,6 +8,10 @@ steps:
   - task: Gradle@2
     inputs:
       jdkVersionOption: 1.11
+      tasks: "build publish"
+    env:
+      USERNAME: $(USERNAME)
+      TOKEN: $(TOKEN)
 
   - task: CopyFiles@2
     inputs:
