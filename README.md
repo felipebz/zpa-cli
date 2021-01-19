@@ -1,6 +1,6 @@
 # zpa-cli (Z PL/SQL Analyzer - Command-line Interface)
 
-[![Build Status](https://dev.azure.com/felipebz/z-plsql-analyzer/_apis/build/status/zpa-cli?branchName=master)](https://dev.azure.com/felipebz/z-plsql-analyzer/_build/latest?definitionId=9&branchName=master)
+[![Build Status](https://dev.azure.com/felipebz/z-plsql-analyzer/_apis/build/status/zpa-cli?branchName=main)](https://dev.azure.com/felipebz/z-plsql-analyzer/_build/latest?definitionId=9&branchName=main)
 
 This is a command-line interface to the [Z PL/SQL Analyzer](https://github.com/felipebz/zpa). It is a code analyzer for Oracle PL/SQL and Oracle Forms projects.
 
