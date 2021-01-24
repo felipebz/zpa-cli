@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-SONAR_SCANNER_VERSION=3.3.0.1492
+SONAR_SCANNER_VERSION=4.5.0.2216
 TOOLS_PATH=`pwd`/source-test/tools
 
 export LANG=en_US.UTF-8
