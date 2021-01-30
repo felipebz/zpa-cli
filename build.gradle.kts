@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 group = "org.zpa"
 version = "1.0.0-SNAPSHOT"
@@ -7,11 +8,27 @@ plugins {
     `maven-publish`
     kotlin("jvm") version "1.4.20"
     application
+    id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 tasks.withType<KotlinJvmCompile> {
     kotlinOptions {
         jvmTarget = "11"
+    }
+}
+
+tasks.named<ShadowJar>("shadowJar") {
+    archiveBaseName.set("shadow")
+    mergeServiceFiles()
+    minimize()
+    manifest {
+        attributes(mapOf("Main-Class" to "br.com.felipezorzo.zpa.cli.MainKt"))
+    }
+}
+
+tasks {
+    build {
+        dependsOn(shadowJar)
     }
 }
 
