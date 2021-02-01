@@ -5,6 +5,8 @@ import br.com.felipezorzo.zpa.cli.sqissue.PrimaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.SecondaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.TextRange
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.groups.OptionGroup
+import com.github.ajalt.clikt.parameters.groups.cooccurring
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
@@ -26,12 +28,18 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
+class SonarQubeOptions : OptionGroup() {
+    val sonarqubeUrl by option(help = "SonarQube server URL").required()
+    val sonarqubeToken by option(help = "The authentication token of a SonarQube user with Execute Analysis permission on the project.").default("")
+    val sonarqubeKey by option(help = "The project's unique key on the SonarQube Server.").default("")
+}
 
 class Main : CliktCommand(name = "zpa-cli") {
     private val sources by option(help = "Folder with files").required()
     private val formsMetadata by option(help = "Oracle Forms metadata file").default("")
     private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps")
     private val output by option(help = "Output filename").default("zpa-issues.json")
+    private val sonarqubeOptions by SonarQubeOptions().cooccurring()
 
     override fun run() {
         javaClass.getResourceAsStream("/logging.properties").use {
