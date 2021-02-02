@@ -10,6 +10,7 @@ import com.github.ajalt.clikt.parameters.groups.cooccurring
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
+import com.github.ajalt.clikt.parameters.types.choice
 import com.google.common.base.Stopwatch
 import com.google.gson.Gson
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
@@ -17,6 +18,7 @@ import org.sonar.plsqlopen.checks.CheckList
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.rules.*
 import org.sonar.plsqlopen.squid.AstScanner
+import org.sonar.plsqlopen.squid.AstScannerResult
 import org.sonar.plsqlopen.squid.ProgressReport
 import org.sonar.plsqlopen.utils.log.Loggers
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
@@ -28,6 +30,8 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
+const val GENERIC_ISSUE_FORMAT = "sq-generic-issue-import"
+
 class SonarQubeOptions : OptionGroup() {
     val sonarqubeUrl by option(help = "SonarQube server URL").required()
     val sonarqubeToken by option(help = "The authentication token of a SonarQube user with Execute Analysis permission on the project.").default("")
@@ -38,7 +42,8 @@ class Main : CliktCommand(name = "zpa-cli") {
     private val sources by option(help = "Folder with files").required()
     private val formsMetadata by option(help = "Oracle Forms metadata file").default("")
     private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps")
-    private val output by option(help = "Output filename").default("zpa-issues.json")
+    private val outputFormat by option(help = "Format of the output file").choice(GENERIC_ISSUE_FORMAT).default(GENERIC_ISSUE_FORMAT)
+    private val outputFile by option(help = "Output filename").default("zpa-issues.json")
     private val sonarqubeOptions by SonarQubeOptions().cooccurring()
 
     override fun run() {
@@ -70,46 +75,73 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val metadata = FormsMetadata.loadFromFile(formsMetadata)
 
-        val genericIssues = mutableListOf<GenericIssue>()
-
         val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
         progressReport.start(files.map { it.pathRelativeToBase }.toList())
 
         val scanner = AstScanner(checks.all(), metadata, true, StandardCharsets.UTF_8)
+
+        val result = mutableMapOf<InputFile, List<ExecutedCheck>>()
         for (file in files) {
+            val scannerResult = scanner.scanFile(file)
+            result[file] = getIssues(scannerResult)
+            progressReport.nextFile()
+        }
+        progressReport.stop()
+
+        val generatedOutput =
+            if (outputFormat == GENERIC_ISSUE_FORMAT) {
+                exportToGenericIssueFormat(repository, checks, result)
+            } else {
+                ""
+            }
+
+        File(outputFile).writeText(generatedOutput)
+
+        LOG.info("Time elapsed: ${stopwatch.elapsed().toMillis()} ms")
+    }
+
+    private fun getIssues(scannerResult: AstScannerResult): List<ExecutedCheck> {
+        return scannerResult.executedChecks.map { ExecutedCheck(it, (it as PlSqlCheck).issues().toList()) }
+    }
+
+    private fun exportToGenericIssueFormat(
+        repository: Repository,
+        checks: ZpaChecks<PlSqlVisitor>,
+        result: Map<InputFile, List<ExecutedCheck>>
+    ): String {
+        val genericIssues = mutableListOf<GenericIssue>()
+        for ((file, executedChecks) in result) {
             val relativeFilePathStr = file.pathRelativeToBase.replace('\\', '/')
 
-            val result = scanner.scanFile(file)
-
-            for (visitor in result.executedChecks) {
-                for (issue in (visitor as PlSqlCheck).issues()) {
+            for (executedCheck in executedChecks) {
+                for (issue in executedCheck.issues) {
                     val issuePrimaryLocation = issue.primaryLocation()
 
                     val primaryLocation = PrimaryLocation(
-                            issuePrimaryLocation.message(),
-                            relativeFilePathStr,
-                            createTextRange(
-                                    issuePrimaryLocation.startLine(),
-                                    issuePrimaryLocation.endLine(),
-                                    issuePrimaryLocation.startLineOffset(),
-                                    issuePrimaryLocation.endLineOffset())
+                        issuePrimaryLocation.message(),
+                        relativeFilePathStr,
+                        createTextRange(
+                            issuePrimaryLocation.startLine(),
+                            issuePrimaryLocation.endLine(),
+                            issuePrimaryLocation.startLineOffset(),
+                            issuePrimaryLocation.endLineOffset())
                     )
 
                     val secondaryLocations = mutableListOf<SecondaryLocation>()
 
                     for (secondary in issue.secondaryLocations()) {
                         secondaryLocations += SecondaryLocation(
-                                secondary.message(),
-                                relativeFilePathStr,
-                                createTextRange(
-                                        secondary.startLine(),
-                                        secondary.endLine(),
-                                        secondary.startLineOffset(),
-                                        secondary.endLineOffset())
+                            secondary.message(),
+                            relativeFilePathStr,
+                            createTextRange(
+                                secondary.startLine(),
+                                secondary.endLine(),
+                                secondary.startLineOffset(),
+                                secondary.endLineOffset())
                         )
                     }
 
-                    val ruleKey = checks.ruleKey(visitor) as ZpaRuleKey
+                    val ruleKey = checks.ruleKey(executedCheck.check) as ZpaRuleKey
                     val rule = repository.rule(ruleKey.rule()) as ZpaRule
 
                     val type = when {
@@ -119,27 +151,20 @@ class Main : CliktCommand(name = "zpa-cli") {
                     }
 
                     genericIssues += GenericIssue(
-                            ruleId = rule.key,
-                            severity = rule.severity,
-                            type = type,
-                            primaryLocation = primaryLocation,
-                            duration = rule.remediationConstant,
-                            secondaryLocations = secondaryLocations
+                        ruleId = rule.key,
+                        severity = rule.severity,
+                        type = type,
+                        primaryLocation = primaryLocation,
+                        duration = rule.remediationConstant,
+                        secondaryLocations = secondaryLocations
                     )
                 }
             }
-            progressReport.nextFile()
         }
-        progressReport.stop()
-
         val genericReport = GenericIssueData(genericIssues)
 
         val gson = Gson()
-
-        val json = gson.toJson(genericReport)
-        File(output).writeText(json)
-
-        LOG.info("Time elapsed: ${stopwatch.elapsed().toMillis()} ms")
+        return gson.toJson(genericReport)
     }
 
     private fun createTextRange(startLine: Int, endLine: Int, startLineOffset: Int, endLineOffset: Int): TextRange {

@@ -22,4 +22,13 @@ class InputFile(private val type: PlSqlFile.Type,
 
     val pathRelativeToBase: String = baseDirPath.relativize(Paths.get(file.absolutePath)).toString()
 
+    override fun hashCode(): Int {
+        return file.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other == null || other !is InputFile) return false
+        return file == other.file;
+    }
+
 }
