@@ -35,8 +35,8 @@ tasks {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven { setUrl("https://maven.pkg.github.com/felipebz/zpa") }
     jcenter()
-    maven { setUrl("https://oss.jfrog.org/artifactory/oss-snapshot-local") }
 }
 
 dependencies {
