@@ -35,7 +35,13 @@ tasks {
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { setUrl("https://maven.pkg.github.com/felipebz/zpa") }
+    maven { 
+        setUrl("https://maven.pkg.github.com/felipebz/zpa")
+        credentials {
+            username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+        }
+    }
     jcenter()
 }
 
