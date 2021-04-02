@@ -10,8 +10,8 @@ steps:
       jdkVersionOption: 1.11
       tasks: "build publish"
     env:
-      USERNAME: $(USERNAME)
-      TOKEN: $(TOKEN)
+      DEPLOY_USERNAME: $(DEPLOY_USERNAME)
+      DEPLOY_TOKEN: $(DEPLOY_TOKEN)
 
   - task: CopyFiles@2
     inputs:

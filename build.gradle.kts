@@ -36,11 +36,7 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven { 
-        setUrl("https://maven.pkg.github.com/felipebz/zpa")
-        credentials {
-            username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-            password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
-        }
+        setUrl("https://pkgs.dev.azure.com/felipebz/z-plsql-analyzer/_packaging/public_feed/maven/v1")
     }
     jcenter()
 }
@@ -60,11 +56,11 @@ application {
 publishing {
     repositories {
         maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/felipebz/zpa-cli")
+            name = "AzureArtifacts"
+            url = uri("https://pkgs.dev.azure.com/felipebz/z-plsql-analyzer/_packaging/public_feed/maven/v1")
             credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("DEPLOY_USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("DEPLOY_TOKEN")
             }
         }
     }
