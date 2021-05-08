@@ -28,7 +28,7 @@ class InputFile(private val type: PlSqlFile.Type,
 
     override fun equals(other: Any?): Boolean {
         if (other == null || other !is InputFile) return false
-        return file == other.file;
+        return file == other.file
     }
 
 }

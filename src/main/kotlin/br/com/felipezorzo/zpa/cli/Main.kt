@@ -26,6 +26,7 @@ import org.sonar.plugins.plsqlopen.api.checks.PlSqlCheck
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
@@ -69,7 +70,7 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val files = baseDir
                 .walkTopDown()
-                .filter { it.isFile && extensions.contains(it.extension.toLowerCase()) }
+                .filter { it.isFile && extensions.contains(it.extension.lowercase(Locale.getDefault())) }
                 .map { InputFile(PlSqlFile.Type.MAIN, baseDirPath, it, StandardCharsets.UTF_8) }
                 .toList()
 
