@@ -8,7 +8,7 @@ plugins {
     `maven-publish`
     kotlin("jvm") version "1.5.0"
     application
-    id("com.github.johnrengelman.shadow") version "6.1.0"
+    id("com.github.johnrengelman.shadow") version "7.0.0"
 }
 
 tasks.withType<KotlinJvmCompile> {
@@ -50,7 +50,7 @@ dependencies {
 }
 
 application {
-    mainClassName = "br.com.felipezorzo.zpa.cli.MainKt"
+    mainClass.set("br.com.felipezorzo.zpa.cli.MainKt")
 }
 
 publishing {
