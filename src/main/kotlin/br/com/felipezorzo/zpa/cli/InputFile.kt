@@ -31,4 +31,8 @@ class InputFile(private val type: PlSqlFile.Type,
         return file == other.file
     }
 
+    override fun toString(): String {
+        return pathRelativeToBase
+    }
+
 }
