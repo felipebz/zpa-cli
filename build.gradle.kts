@@ -18,7 +18,7 @@ tasks.withType<KotlinJvmCompile> {
 }
 
 tasks.named<ShadowJar>("shadowJar") {
-    archiveBaseName.set("shadow")
+    archiveBaseName.set("zpa-cli")
     mergeServiceFiles()
     minimize()
     manifest {
