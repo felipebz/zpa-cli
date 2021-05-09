@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+ZPA_CLI_VERSION=1.0.0
 SONAR_SCANNER_VERSION=4.5.0.2216
 TOOLS_PATH=`pwd`/source-test/tools
 
@@ -21,13 +22,13 @@ fi
 # Extract zpa-cli
 
 rm -rf zpa-cli/
-tar xvf ../../build/distributions/zpa-cli-1.0.0-SNAPSHOT.tar
+tar xvf ../../build/distributions/zpa-cli-$ZPA_CLI_VERSION.tar
 
 # Execute an analysis
 
 cd ../utPLSQL/
 
-$TOOLS_PATH/zpa-cli-1.0.0-SNAPSHOT/bin/zpa-cli --sources . --output-file zpa-issues.json
+$TOOLS_PATH/zpa-cli-$ZPA_CLI_VERSION/bin/zpa-cli --sources . --output-file zpa-issues.json
 sonar-scanner -Dsonar.projectKey=utPLSQL-zpa-demo \
     -Dsonar.organization=$SONARCLOUD_ORGANIZATION \
     -Dsonar.host.url=https://sonarcloud.io \
