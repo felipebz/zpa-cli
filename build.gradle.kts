@@ -43,8 +43,8 @@ repositories {
 
 dependencies {
     implementation("com.github.ajalt.clikt:clikt:3.1.0")
-    implementation("org.sonar.plsqlopen:zpa-core:3.0.0-SNAPSHOT")
-    implementation("org.sonar.plsqlopen:plsql-checks:3.0.0-SNAPSHOT")
+    implementation("org.sonar.plsqlopen:zpa-core:2.4.0")
+    implementation("org.sonar.plsqlopen:plsql-checks:2.4.0")
     implementation("com.google.guava:guava:28.2-jre")
     testImplementation(kotlin("test"))
 }
