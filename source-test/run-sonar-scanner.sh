@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-ZPA_CLI_VERSION=1.0.0
+ZPA_CLI_VERSION=2.0.0-SNAPSHOT
 SONAR_SCANNER_VERSION=4.5.0.2216
 TOOLS_PATH=`pwd`/source-test/tools
 
