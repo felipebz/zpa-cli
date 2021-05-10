@@ -1,4 +1,4 @@
-# zpa-cli (Z PL/SQL Analyzer - Command-line Interface)
+# ZPA CLI
 
 [![Build Status](https://dev.azure.com/felipebz/z-plsql-analyzer/_apis/build/status/zpa-cli?branchName=main)](https://dev.azure.com/felipebz/z-plsql-analyzer/_build/latest?definitionId=9&branchName=main)
 
