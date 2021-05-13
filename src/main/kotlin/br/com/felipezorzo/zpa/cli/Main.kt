@@ -1,5 +1,6 @@
 package br.com.felipezorzo.zpa.cli
 
+import br.com.felipezorzo.zpa.cli.sonarqube.SonarQubeLoader
 import br.com.felipezorzo.zpa.cli.sqissue.GenericIssueData
 import br.com.felipezorzo.zpa.cli.sqissue.PrimaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.SecondaryLocation
@@ -32,6 +33,7 @@ import java.util.logging.LogManager
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
 const val GENERIC_ISSUE_FORMAT = "sq-generic-issue-import"
+const val SONAR_REPORT_FORMAT = "sq-issue-report"
 
 class SonarQubeOptions : OptionGroup() {
     val sonarqubeUrl by option(help = "SonarQube server URL").required()
@@ -43,7 +45,7 @@ class Main : CliktCommand(name = "zpa-cli") {
     private val sources by option(help = "Folder with files").required()
     private val formsMetadata by option(help = "Oracle Forms metadata file").default("")
     private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps")
-    private val outputFormat by option(help = "Format of the output file").choice(GENERIC_ISSUE_FORMAT).default(GENERIC_ISSUE_FORMAT)
+    private val outputFormat by option(help = "Format of the output file").choice(GENERIC_ISSUE_FORMAT, SONAR_REPORT_FORMAT).default(GENERIC_ISSUE_FORMAT)
     private val outputFile by option(help = "Output filename").default("zpa-issues.json")
     private val sonarqubeOptions by SonarQubeOptions().cooccurring()
 
@@ -90,10 +92,25 @@ class Main : CliktCommand(name = "zpa-cli") {
         progressReport.stop()
 
         val generatedOutput =
-            if (outputFormat == GENERIC_ISSUE_FORMAT) {
-                exportToGenericIssueFormat(repository, checks, result)
-            } else {
-                ""
+            when (outputFormat) {
+                GENERIC_ISSUE_FORMAT -> {
+                    exportToGenericIssueFormat(repository, checks, result)
+                }
+                SONAR_REPORT_FORMAT -> {
+                    sonarqubeOptions?.let {
+                        if (it.sonarqubeUrl.isNotEmpty()) {
+                            val issues = SonarQubeLoader(it).updateIssues(repository, checks, result)
+                            val gson = Gson()
+                            gson.toJson(issues)
+                        }
+                        else {
+                            ""
+                        }
+                    }.orEmpty()
+                }
+                else -> {
+                    ""
+                }
             }
 
         File(outputFile).writeText(generatedOutput)
