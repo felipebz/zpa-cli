@@ -46,6 +46,8 @@ dependencies {
     implementation("org.sonar.plsqlopen:zpa-core:3.0.0-SNAPSHOT")
     implementation("org.sonar.plsqlopen:plsql-checks:3.0.0-SNAPSHOT")
     implementation("com.google.guava:guava:28.2-jre")
+    implementation("org.sonarsource.sonarqube:sonar-scanner-protocol:7.9")
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
     testImplementation(kotlin("test"))
 }
 
