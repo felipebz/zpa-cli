@@ -19,11 +19,10 @@ import org.sonar.plsqlopen.checks.CheckList
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.rules.*
 import org.sonar.plsqlopen.squid.AstScanner
-import org.sonar.plsqlopen.squid.AstScannerResult
+import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plsqlopen.squid.ProgressReport
 import org.sonar.plsqlopen.utils.log.Loggers
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
-import org.sonar.plugins.plsqlopen.api.checks.PlSqlCheck
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -83,10 +82,10 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val scanner = AstScanner(checks.all(), metadata, true, StandardCharsets.UTF_8)
 
-        val result = mutableMapOf<InputFile, List<ExecutedCheck>>()
+        val issues = mutableListOf<ZpaIssue>()
         for (file in files) {
             val scannerResult = scanner.scanFile(file)
-            result[file] = getIssues(scannerResult)
+            issues.addAll(scannerResult.issues)
             progressReport.nextFile()
         }
         progressReport.stop()
@@ -94,14 +93,14 @@ class Main : CliktCommand(name = "zpa-cli") {
         val generatedOutput =
             when (outputFormat) {
                 GENERIC_ISSUE_FORMAT -> {
-                    exportToGenericIssueFormat(repository, checks, result)
+                    exportToGenericIssueFormat(repository, checks, issues)
                 }
                 SONAR_REPORT_FORMAT -> {
                     sonarqubeOptions?.let {
                         if (it.sonarqubeUrl.isNotEmpty()) {
-                            val issues = SonarQubeLoader(it).updateIssues(repository, checks, result)
+                            val issuesToExport = SonarQubeLoader(it).updateIssues(repository, checks, issues)
                             val gson = Gson()
-                            gson.toJson(issues)
+                            gson.toJson(issuesToExport)
                         }
                         else {
                             ""
@@ -118,66 +117,58 @@ class Main : CliktCommand(name = "zpa-cli") {
         LOG.info("Time elapsed: ${stopwatch.elapsed().toMillis()} ms")
     }
 
-    private fun getIssues(scannerResult: AstScannerResult): List<ExecutedCheck> {
-        return scannerResult.executedChecks.map { ExecutedCheck(it, (it as PlSqlCheck).issues().toList()) }
-    }
-
     private fun exportToGenericIssueFormat(
         repository: Repository,
         checks: ZpaChecks<PlSqlVisitor>,
-        result: Map<InputFile, List<ExecutedCheck>>
+        issues: List<ZpaIssue>
     ): String {
         val genericIssues = mutableListOf<GenericIssue>()
-        for ((file, executedChecks) in result) {
-            val relativeFilePathStr = file.pathRelativeToBase.replace('\\', '/')
+        for (issue in issues) {
+            val relativeFilePathStr = (issue.file as InputFile).pathRelativeToBase.replace('\\', '/')
 
-            for (executedCheck in executedChecks) {
-                for (issue in executedCheck.issues) {
-                    val issuePrimaryLocation = issue.primaryLocation()
+            val issuePrimaryLocation = issue.primaryLocation
 
-                    val primaryLocation = PrimaryLocation(
-                        issuePrimaryLocation.message(),
-                        relativeFilePathStr,
-                        createTextRange(
-                            issuePrimaryLocation.startLine(),
-                            issuePrimaryLocation.endLine(),
-                            issuePrimaryLocation.startLineOffset(),
-                            issuePrimaryLocation.endLineOffset())
-                    )
+            val primaryLocation = PrimaryLocation(
+                issuePrimaryLocation.message(),
+                relativeFilePathStr,
+                createTextRange(
+                    issuePrimaryLocation.startLine(),
+                    issuePrimaryLocation.endLine(),
+                    issuePrimaryLocation.startLineOffset(),
+                    issuePrimaryLocation.endLineOffset())
+            )
 
-                    val secondaryLocations = mutableListOf<SecondaryLocation>()
+            val secondaryLocations = mutableListOf<SecondaryLocation>()
 
-                    for (secondary in issue.secondaryLocations()) {
-                        secondaryLocations += SecondaryLocation(
-                            secondary.message(),
-                            relativeFilePathStr,
-                            createTextRange(
-                                secondary.startLine(),
-                                secondary.endLine(),
-                                secondary.startLineOffset(),
-                                secondary.endLineOffset())
-                        )
-                    }
-
-                    val ruleKey = checks.ruleKey(executedCheck.check) as ZpaRuleKey
-                    val rule = repository.rule(ruleKey.rule()) as ZpaRule
-
-                    val type = when {
-                        rule.tags.contains("vulnerability") -> "VULNERABILITY"
-                        rule.tags.contains("bug") -> "BUG"
-                        else -> "CODE_SMELL"
-                    }
-
-                    genericIssues += GenericIssue(
-                        ruleId = rule.key,
-                        severity = rule.severity,
-                        type = type,
-                        primaryLocation = primaryLocation,
-                        duration = rule.remediationConstant,
-                        secondaryLocations = secondaryLocations
-                    )
-                }
+            for (secondary in issue.secondaryLocations) {
+                secondaryLocations += SecondaryLocation(
+                    secondary.message(),
+                    relativeFilePathStr,
+                    createTextRange(
+                        secondary.startLine(),
+                        secondary.endLine(),
+                        secondary.startLineOffset(),
+                        secondary.endLineOffset())
+                )
             }
+
+            val ruleKey = checks.ruleKey(issue.check) as ZpaRuleKey
+            val rule = repository.rule(ruleKey.rule()) as ZpaRule
+
+            val type = when {
+                rule.tags.contains("vulnerability") -> "VULNERABILITY"
+                rule.tags.contains("bug") -> "BUG"
+                else -> "CODE_SMELL"
+            }
+
+            genericIssues += GenericIssue(
+                ruleId = rule.key,
+                severity = rule.severity,
+                type = type,
+                primaryLocation = primaryLocation,
+                duration = rule.remediationConstant,
+                secondaryLocations = secondaryLocations
+            )
         }
         val genericReport = GenericIssueData(genericIssues)
 

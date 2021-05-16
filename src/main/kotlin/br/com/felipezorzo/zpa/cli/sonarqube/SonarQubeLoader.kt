@@ -1,6 +1,5 @@
 package br.com.felipezorzo.zpa.cli.sonarqube
 
-import br.com.felipezorzo.zpa.cli.ExecutedCheck
 import br.com.felipezorzo.zpa.cli.InputFile
 import br.com.felipezorzo.zpa.cli.SonarQubeOptions
 import br.com.felipezorzo.zpa.cli.sonarreport.Issue
@@ -16,6 +15,7 @@ import org.sonar.plsqlopen.rules.Repository
 import org.sonar.plsqlopen.rules.ZpaChecks
 import org.sonar.plsqlopen.rules.ZpaRule
 import org.sonar.plsqlopen.rules.ZpaRuleKey
+import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import org.sonar.scanner.protocol.input.ScannerInput
 import java.io.InputStream
@@ -24,20 +24,18 @@ import java.util.*
 
 
 class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
-    fun updateIssues(repository: Repository, checks: ZpaChecks<PlSqlVisitor>, result: MutableMap<InputFile, List<ExecutedCheck>>): SonarPreviewReport {
+    fun updateIssues(repository: Repository, checks: ZpaChecks<PlSqlVisitor>, issues: List<ZpaIssue>): SonarPreviewReport {
         val serverIssues = downloadIssues()
 
-        val analyzedFiles = result.keys.map { it.pathRelativeToBase }
+        val analyzedFiles = issues.map { (it.file as InputFile).pathRelativeToBase }
         val filteredIssues = serverIssues.filter { analyzedFiles.contains(it.path) }
 
         val localIssues = mutableListOf<LocalIssueAdapter>()
-        for ((_, executedChecks) in result) {
-            for (executedCheck in executedChecks.filter { it.issues.isNotEmpty() }) {
-                val ruleKey = checks.ruleKey(executedCheck.check) as ZpaRuleKey
-                val rule = repository.rule(ruleKey.rule()) as ZpaRule
+        for (issue in issues) {
+            val ruleKey = checks.ruleKey(issue.check) as ZpaRuleKey
+            val rule = repository.rule(ruleKey.rule()) as ZpaRule
 
-                localIssues.addAll(executedCheck.issues.map { LocalIssueAdapter(rule.key, it) })
-            }
+            localIssues.addAll(issues.map { LocalIssueAdapter(rule.key, it) })
         }
 
         val trackerResult = Tracker<ServerIssueAdapter, LocalIssueAdapter>().track(
@@ -47,8 +45,8 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
 
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
 
-        val issues = mutableListOf<Issue>();
-        issues.addAll(trackerResult.matchedRaws.map {
+        val issuesToExport = mutableListOf<Issue>();
+        issuesToExport.addAll(trackerResult.matchedRaws.map {
             Issue(
                 assignee = "",
                 component = "",
@@ -66,7 +64,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
                 status = "OPEN",
             )
         })
-        issues.addAll(trackerResult.unmatchedBases.map {
+        issuesToExport.addAll(trackerResult.unmatchedBases.map {
             Issue(
                 assignee = "",
                 component = "",
@@ -85,7 +83,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
             )
         })
 
-        return SonarPreviewReport(listOf(), issues, listOf(), "")
+        return SonarPreviewReport(listOf(), issuesToExport, listOf(), "")
     }
 
     private fun downloadIssues(): List<ScannerInput.ServerIssue> {
