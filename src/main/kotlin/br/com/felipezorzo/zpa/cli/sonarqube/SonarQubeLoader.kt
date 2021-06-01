@@ -30,12 +30,11 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
         val analyzedFiles = issues.map { (it.file as InputFile).pathRelativeToBase }
         val filteredIssues = serverIssues.filter { analyzedFiles.contains(it.path) }
 
-        val localIssues = mutableListOf<LocalIssueAdapter>()
-        for (issue in issues) {
-            val ruleKey = checks.ruleKey(issue.check) as ZpaRuleKey
+        val localIssues = issues.map {
+            val ruleKey = checks.ruleKey(it.check) as ZpaRuleKey
             val rule = repository.rule(ruleKey.rule()) as ZpaRule
 
-            localIssues.addAll(issues.map { LocalIssueAdapter(rule.key, it) })
+            LocalIssueAdapter(rule.key, it)
         }
 
         val trackerResult = Tracker<ServerIssueAdapter, LocalIssueAdapter>().track(
