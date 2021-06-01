@@ -124,7 +124,7 @@ class Main : CliktCommand(name = "zpa-cli") {
     ): String {
         val genericIssues = mutableListOf<GenericIssue>()
         for (issue in issues) {
-            val relativeFilePathStr = (issue.file as InputFile).pathRelativeToBase.replace('\\', '/')
+            val relativeFilePathStr = (issue.file as InputFile).pathRelativeToBase
 
             val issuePrimaryLocation = issue.primaryLocation
 

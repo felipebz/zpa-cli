@@ -5,6 +5,7 @@ import java.io.File
 import java.nio.charset.Charset
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.invariantSeparatorsPathString
 
 class InputFile(private val type: PlSqlFile.Type,
                 baseDirPath: Path,
@@ -20,7 +21,7 @@ class InputFile(private val type: PlSqlFile.Type,
 
     override fun type(): PlSqlFile.Type = type
 
-    val pathRelativeToBase: String = baseDirPath.relativize(Paths.get(file.absolutePath)).toString()
+    val pathRelativeToBase: String = baseDirPath.relativize(Paths.get(file.absolutePath)).invariantSeparatorsPathString
 
     override fun hashCode(): Int {
         return file.hashCode()
