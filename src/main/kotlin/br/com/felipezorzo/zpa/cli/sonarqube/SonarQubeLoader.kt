@@ -44,8 +44,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
 
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
 
-        val issuesToExport = mutableListOf<Issue>();
-        issuesToExport.addAll(trackerResult.matchedRaws.map {
+        val issuesToExport = trackerResult.matchedRaws.map {
             Issue(
                 assignee = "",
                 component = "",
@@ -62,8 +61,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
                 startOffset = it.value.startOffset,
                 status = "OPEN",
             )
-        })
-        issuesToExport.addAll(trackerResult.unmatchedBases.map {
+        } + trackerResult.unmatchedBases.map {
             Issue(
                 assignee = "",
                 component = "",
@@ -80,7 +78,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
                 startOffset = it.startOffset,
                 status = "OPEN",
             )
-        })
+        }
 
         return SonarPreviewReport(listOf(), issuesToExport, listOf(), "")
     }
