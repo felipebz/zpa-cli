@@ -5,7 +5,7 @@ COPY . /app
 RUN cd /app && \
     ./gradlew build && \
     cd build/distributions && \
-    mv -f zpa-cli-*.tar zpa-cli.tar
+    mv -f zpa-cli-shadow-*.tar zpa-cli.tar
 
 FROM adoptopenjdk:11-jre
 
