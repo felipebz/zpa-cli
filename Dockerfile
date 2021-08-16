@@ -18,6 +18,8 @@ RUN cd /opt && \
 
 ENV PATH=/opt/zpa-cli/bin:$PATH
 
-WORKDIR /wd
+WORKDIR /src
+
+ENTRYPOINT ["zpa-cli"]
 
 CMD [ "zpa-cli", "--help" ]
