@@ -1,3 +1,4 @@
 build/
 source-test/
 .gradle/
+!build/distributions/zpa-cli-shadow-*.tar

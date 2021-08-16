@@ -1,17 +1,9 @@
-FROM adoptopenjdk:11 AS builder
+FROM adoptopenjdk/openjdk16:alpine-jre
 
-COPY . /app
-
-RUN cd /app && \
-    ./gradlew build && \
-    cd build/distributions && \
-    mv -f zpa-cli-shadow-*.tar zpa-cli.tar
-
-FROM adoptopenjdk:11-jre
-
-COPY --from=builder /app/build/distributions/zpa-cli.tar /opt/
+COPY build/distributions/zpa-cli-shadow-*.tar /opt/
 
 RUN cd /opt && \
+    mv zpa-cli-shadow-*.tar zpa-cli.tar && \
     tar xvf zpa-cli.tar && \
     rm -f zpa-cli.tar && \
     mv -f zpa-cli-*/ zpa-cli/
