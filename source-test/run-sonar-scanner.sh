@@ -28,7 +28,7 @@ tar xvf ../../build/distributions/zpa-cli-$ZPA_CLI_VERSION.tar
 
 cd ../utPLSQL/
 
-$TOOLS_PATH/zpa-cli-$ZPA_CLI_VERSION/bin/zpa-cli --sources . --output-file zpa-issues.json
+$TOOLS_PATH/zpa-cli-$ZPA_CLI_VERSION/bin/zpa-cli --sources . --output-file zpa-issues.json --output-format sq-generic-issue-import
 sonar-scanner -Dsonar.projectKey=utPLSQL-zpa-demo \
     -Dsonar.organization=$SONARCLOUD_ORGANIZATION \
     -Dsonar.host.url=https://sonarcloud.io \

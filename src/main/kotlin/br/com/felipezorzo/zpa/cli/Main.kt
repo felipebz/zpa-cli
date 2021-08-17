@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
+const val CONSOLE = "console"
 const val GENERIC_ISSUE_FORMAT = "sq-generic-issue-import"
 const val SONAR_REPORT_FORMAT = "sq-issue-report"
 
@@ -44,8 +45,8 @@ class Main : CliktCommand(name = "zpa-cli") {
     private val sources by option(help = "Folder with files").required()
     private val formsMetadata by option(help = "Oracle Forms metadata file").default("")
     private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps")
-    private val outputFormat by option(help = "Format of the output file").choice(GENERIC_ISSUE_FORMAT, SONAR_REPORT_FORMAT).default(GENERIC_ISSUE_FORMAT)
-    private val outputFile by option(help = "Output filename").default("zpa-issues.json")
+    private val outputFormat by option(help = "Format of the output file").choice(CONSOLE, GENERIC_ISSUE_FORMAT, SONAR_REPORT_FORMAT).default(CONSOLE)
+    private val outputFile by option(help = "Output filename").default("")
     private val sonarqubeOptions by SonarQubeOptions().cooccurring()
 
     override fun run() {
@@ -90,31 +91,53 @@ class Main : CliktCommand(name = "zpa-cli") {
         }
         progressReport.stop()
 
-        val generatedOutput =
-            when (outputFormat) {
-                GENERIC_ISSUE_FORMAT -> {
-                    exportToGenericIssueFormat(repository, checks, issues)
+        if (outputFormat == CONSOLE) {
+            printIssues(issues)
+        } else {
+            val generatedOutput =
+                when (outputFormat) {
+                    GENERIC_ISSUE_FORMAT -> {
+                        exportToGenericIssueFormat(repository, checks, issues)
+                    }
+                    SONAR_REPORT_FORMAT -> {
+                        sonarqubeOptions?.let {
+                            if (it.sonarqubeUrl.isNotEmpty()) {
+                                val issuesToExport = SonarQubeLoader(it).updateIssues(repository, checks, issues)
+                                val gson = Gson()
+                                gson.toJson(issuesToExport)
+                            } else {
+                                ""
+                            }
+                        }.orEmpty()
+                    }
+                    else -> {
+                        ""
+                    }
                 }
-                SONAR_REPORT_FORMAT -> {
-                    sonarqubeOptions?.let {
-                        if (it.sonarqubeUrl.isNotEmpty()) {
-                            val issuesToExport = SonarQubeLoader(it).updateIssues(repository, checks, issues)
-                            val gson = Gson()
-                            gson.toJson(issuesToExport)
-                        }
-                        else {
-                            ""
-                        }
-                    }.orEmpty()
-                }
-                else -> {
-                    ""
-                }
-            }
 
-        File(outputFile).writeText(generatedOutput)
+            File(outputFile).writeText(generatedOutput)
+        }
 
         LOG.info("Time elapsed: ${stopwatch.elapsed().toMillis()} ms")
+    }
+
+    private fun printIssues(issues: List<ZpaIssue>) {
+        for ((file, fileIssues) in issues.groupBy { (it.file as InputFile).pathRelativeToBase }.toSortedMap()) {
+            println("File: $file")
+
+            for (issue in fileIssues.sortedWith(compareBy({ it.primaryLocation.startLine() }, { it.primaryLocation.startLineOffset() }))) {
+                val startLine = issue.primaryLocation.startLine()
+                val startColumn = issue.primaryLocation.startLineOffset()
+
+                var positionFormatted = "$startLine"
+                if (startColumn != -1) {
+                    positionFormatted += ":$startColumn"
+                }
+                println("${positionFormatted.padEnd(10)}${issue.primaryLocation.message()}")
+            }
+
+            println("")
+        }
     }
 
     private fun exportToGenericIssueFormat(
