@@ -2,7 +2,8 @@ pool:
   vmImage: 'ubuntu-20.04'
 
 variables:
-  GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
+  GRADLE_USER_HOME: $(Pipeline.Workspace)/.cache/.gradle
+  SONAR_USER_HOME: $(Pipeline.Workspace)/.cache/.sonar
   imageName: felipebz/zpa-cli
   tag: 2
 
@@ -16,7 +17,7 @@ steps:
       restoreKeys: |
         gradle | "$(Agent.OS)"
         gradle
-      path: $(GRADLE_USER_HOME)
+      path: $(Pipeline.Workspace)/.cache
 
   - task: Gradle@2
     inputs:
