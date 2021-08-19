@@ -2,6 +2,7 @@ pool:
   vmImage: 'ubuntu-20.04'
 
 variables:
+  GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
   imageName: felipebz/zpa-cli
   tag: 2
 
@@ -9,13 +10,26 @@ steps:
   - checkout: self
     submodules: true
 
+  - task: Cache@2
+    inputs:
+      key: 'gradle | "$(Agent.OS)" | **/build.gradle.kts'
+      restoreKeys: |
+        gradle | "$(Agent.OS)"
+        gradle
+      path: $(GRADLE_USER_HOME)
+
   - task: Gradle@2
     inputs:
       jdkVersionOption: 1.11
       tasks: "build publish"
+      options: '--build-cache'
     env:
       DEPLOY_USERNAME: $(DEPLOY_USERNAME)
       DEPLOY_TOKEN: $(DEPLOY_TOKEN)
+
+  - script: |
+      # stop the Gradle daemon to ensure no files are left open (impacting the save cache operation later)
+      ./gradlew --stop
 
   - task: CopyFiles@2
     inputs:
