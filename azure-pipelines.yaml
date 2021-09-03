@@ -5,7 +5,7 @@ variables:
   GRADLE_USER_HOME: $(Pipeline.Workspace)/.cache/.gradle
   SONAR_USER_HOME: $(Pipeline.Workspace)/.cache/.sonar
   imageName: felipebz/zpa-cli
-  tag: 2
+  tag: nightly
 
 steps:
   - checkout: self
@@ -58,7 +58,6 @@ steps:
       command: build
       tags: |
         $(tag)
-        latest
 
   - task: Docker@2
     displayName: Push Docker image
@@ -68,4 +67,3 @@ steps:
       command: push
       tags: |
         $(tag)
-        latest
