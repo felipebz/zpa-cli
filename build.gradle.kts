@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-group = "org.zpa"
+group = "com.felipebz.zpa"
 version = "2.0.0-SNAPSHOT"
 
 plugins {
