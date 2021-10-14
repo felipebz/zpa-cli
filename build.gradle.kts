@@ -38,7 +38,6 @@ repositories {
     maven { 
         setUrl("https://pkgs.dev.azure.com/felipebz/z-plsql-analyzer/_packaging/public_feed/maven/v1")
     }
-    jcenter()
 }
 
 dependencies {
