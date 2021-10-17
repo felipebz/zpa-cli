@@ -57,6 +57,7 @@ steps:
       repository: $(imageName)
       command: build
       tags: |
+        1.1.0
         $(tag)
 
   - task: Docker@2
@@ -66,4 +67,5 @@ steps:
       repository: $(imageName)
       command: push
       tags: |
+        1.1.0
         $(tag)
