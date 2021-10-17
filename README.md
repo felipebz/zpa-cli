@@ -18,16 +18,19 @@ Currently, the zpa-cli supports these options:
 
 * `--sources`: **[required]** Path to the folder containing the files to be analyzed.
 * `--forms-metadata`: Path to the Oracle Forms [metadata file](https://github.com/felipebz/zpa/wiki/Oracle-Forms-support).
-* `--extensions`: File extensions to analyze separated by comma. The default value is `sql,pkg,pks,pkb`.
-* `--output-file`: Path to the output file. The default value is `zpa-issues.json`.
+* `--extensions`: File extensions to analyze, separated by comma. The default value is `sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps`.
+* `--output-format`: Format of the output. The default value is `console`.  
+* `--output-file`: Path to the output file.
 
-The output file follows the ["Generic Issue Data" format](https://docs.sonarqube.org/latest/analysis/generic-issue/) and it can be used in SonarCloud or in a SonarQube server (as an alternative to the dedicated [Z PL/SQL Analyzer Plugin](https://github.com/felipebz/zpa)).
+Output formats:
+* `console`: writes the analysis result on the standard output
+* `sq-generic-issue-import`: generates a XML file using the ["Generic Issue Data" format](https://docs.sonarqube.org/latest/analysis/generic-issue/) that can be used in SonarCloud or in a SonarQube server (as an alternative to the dedicated [Z PL/SQL Analyzer Plugin](https://github.com/felipebz/zpa)).
 
 ### Example
 
 Running an analysis:
 
-`./zpa-cli/bin/zpa-cli --sources .`
+`./zpa-cli/bin/zpa-cli --sources . --output-file zpa-issues.json --output-format sq-generic-issue-import`
 
 Then you can send the results to a SonarCloud or SonarQube server setting the `sonar.externalIssuesReportPaths` property:
 
