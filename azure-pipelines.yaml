@@ -1,5 +1,5 @@
 pool:
-  vmImage: 'ubuntu-20.04'
+  vmImage: 'ubuntu-latest'
 
 variables:
   GRADLE_USER_HOME: $(Pipeline.Workspace)/.cache/.gradle
