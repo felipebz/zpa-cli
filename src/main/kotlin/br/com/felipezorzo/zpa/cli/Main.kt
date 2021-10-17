@@ -1,13 +1,11 @@
 package br.com.felipezorzo.zpa.cli
 
-import br.com.felipezorzo.zpa.cli.sonarqube.SonarQubeLoader
 import br.com.felipezorzo.zpa.cli.sqissue.GenericIssueData
 import br.com.felipezorzo.zpa.cli.sqissue.PrimaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.SecondaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.TextRange
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.groups.OptionGroup
-import com.github.ajalt.clikt.parameters.groups.cooccurring
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
@@ -19,8 +17,8 @@ import org.sonar.plsqlopen.checks.CheckList
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.rules.*
 import org.sonar.plsqlopen.squid.AstScanner
-import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plsqlopen.squid.ProgressReport
+import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plsqlopen.utils.log.Loggers
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
@@ -33,7 +31,7 @@ import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
 const val CONSOLE = "console"
 const val GENERIC_ISSUE_FORMAT = "sq-generic-issue-import"
-const val SONAR_REPORT_FORMAT = "sq-issue-report"
+//const val SONAR_REPORT_FORMAT = "sq-issue-report"
 
 class SonarQubeOptions : OptionGroup() {
     val sonarqubeUrl by option(help = "SonarQube server URL").required()
@@ -45,9 +43,9 @@ class Main : CliktCommand(name = "zpa-cli") {
     private val sources by option(help = "Folder with files").required()
     private val formsMetadata by option(help = "Oracle Forms metadata file").default("")
     private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps")
-    private val outputFormat by option(help = "Format of the output file").choice(CONSOLE, GENERIC_ISSUE_FORMAT, SONAR_REPORT_FORMAT).default(CONSOLE)
+    private val outputFormat by option(help = "Format of the output file").choice(CONSOLE, GENERIC_ISSUE_FORMAT/*, SONAR_REPORT_FORMAT*/).default(CONSOLE)
     private val outputFile by option(help = "Output filename").default("")
-    private val sonarqubeOptions by SonarQubeOptions().cooccurring()
+    //private val sonarqubeOptions by SonarQubeOptions().cooccurring()
 
     override fun run() {
         javaClass.getResourceAsStream("/logging.properties").use {
@@ -99,7 +97,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                     GENERIC_ISSUE_FORMAT -> {
                         exportToGenericIssueFormat(repository, checks, issues)
                     }
-                    SONAR_REPORT_FORMAT -> {
+                    /*SONAR_REPORT_FORMAT -> {
                         sonarqubeOptions?.let {
                             if (it.sonarqubeUrl.isNotEmpty()) {
                                 val issuesToExport = SonarQubeLoader(it).updateIssues(repository, checks, issues)
@@ -109,7 +107,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                                 ""
                             }
                         }.orEmpty()
-                    }
+                    }*/
                     else -> {
                         ""
                     }
