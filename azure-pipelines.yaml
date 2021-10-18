@@ -44,13 +44,6 @@ steps:
       pathtoPublish: $(Build.ArtifactStagingDirectory)
       artifactName: zpa-cli
 
-  - script: |
-      ./source-test/run-sonar-scanner.sh
-    displayName: 'Analyze demo project on SonarCloud'
-    env:
-      SONARCLOUD_ORGANIZATION: $(SONARCLOUD_ORGANIZATION)
-      SONARCLOUD_TOKEN: $(SONARCLOUD_TOKEN)
-
   - task: Docker@2
     displayName: Build Docker image
     inputs:
@@ -58,6 +51,13 @@ steps:
       command: build
       tags: |
         $(tag)
+
+  - script: |
+      ./source-test/run-sonar-scanner.sh
+    displayName: 'Analyze demo project on SonarCloud'
+    env:
+      SONARCLOUD_ORGANIZATION: $(SONARCLOUD_ORGANIZATION)
+      SONARCLOUD_TOKEN: $(SONARCLOUD_TOKEN)
 
   - task: Docker@2
     displayName: Push Docker image
