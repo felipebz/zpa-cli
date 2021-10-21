@@ -19,8 +19,8 @@ import org.sonar.plsqlopen.checks.CheckList
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.rules.*
 import org.sonar.plsqlopen.squid.AstScanner
-import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plsqlopen.squid.ProgressReport
+import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plsqlopen.utils.log.Loggers
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
+import java.util.stream.Collectors
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
 const val CONSOLE = "console"
@@ -83,12 +84,12 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val scanner = AstScanner(checks.all(), metadata, true, StandardCharsets.UTF_8)
 
-        val issues = mutableListOf<ZpaIssue>()
-        for (file in files) {
+        val issues = files.parallelStream().flatMap { file ->
             val scannerResult = scanner.scanFile(file)
-            issues.addAll(scannerResult.issues)
             progressReport.nextFile()
-        }
+            scannerResult.issues.stream()
+        }.collect(Collectors.toList())
+
         progressReport.stop()
 
         if (outputFormat == CONSOLE) {
