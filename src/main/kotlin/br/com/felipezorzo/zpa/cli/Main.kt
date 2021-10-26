@@ -64,7 +64,7 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val repository = Repository("zpa")
         val ruleMetadataLoader = RuleMetadataLoader()
-        CustomAnnotationBasedRulesDefinition.load(repository, "zpa", CheckList.checks, ruleMetadataLoader)
+        CustomAnnotationBasedRulesDefinition.load(repository, "plsqlopen", CheckList.checks, ruleMetadataLoader)
 
         val activeRules = ActiveRules().addRepository(repository)
 
