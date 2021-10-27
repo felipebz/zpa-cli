@@ -15,6 +15,8 @@ class LocalIssueAdapter(override val ruleKey: String, private val rule: ZpaRule,
         get() = localIssue.primaryLocation.startLine().hashCode()
     override val serverIssueKey: String
         get() = localIssue.toString()
+    override val path: String
+        get() = localIssue.file.toString()
     val startOffset: Int
         get() = localIssue.primaryLocation.startLineOffset()
     val endLine: Int

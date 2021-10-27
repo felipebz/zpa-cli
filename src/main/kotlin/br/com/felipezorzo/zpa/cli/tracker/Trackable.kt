@@ -7,4 +7,5 @@ interface Trackable {
     val lineHash: Int
     val textRangeHash: Int
     val serverIssueKey: String
+    val path: String
 }

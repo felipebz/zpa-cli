@@ -16,6 +16,8 @@ class ServerIssueAdapter(private val serverIssue: ScannerInput.ServerIssue) : Tr
         get() = serverIssue.line.hashCode()
     override val serverIssueKey: String
         get() = serverIssue.key
+    override val path: String
+        get() = serverIssue.path
     val creationDate: Long
         get() = serverIssue.creationDate
     val severity: String

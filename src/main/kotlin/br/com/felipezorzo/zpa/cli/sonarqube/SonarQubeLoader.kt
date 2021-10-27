@@ -45,7 +45,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private va
         val issuesToExport = trackerResult.matchedRaws.map {
             Issue(
                 assignee = "",
-                component = "",
+                component = it.value.path,
                 creationDate = dateFormat.format(Date(it.key.creationDate)),
                 endLine = it.value.endLine,
                 endOffset = it.value.endOffset,
@@ -62,7 +62,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private va
         } + trackerResult.unmatchedBases.map {
             Issue(
                 assignee = "",
-                component = "",
+                component = it.path,
                 creationDate = dateFormat.format(Date()),
                 endLine = it.endLine,
                 endOffset = it.endOffset,
