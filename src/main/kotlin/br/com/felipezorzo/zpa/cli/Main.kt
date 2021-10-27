@@ -103,7 +103,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                     SONAR_REPORT_FORMAT -> {
                         sonarqubeOptions?.let {
                             if (it.sonarqubeUrl.isNotEmpty()) {
-                                val issuesToExport = SonarQubeLoader(it).updateIssues(repository, checks, issues)
+                                val issuesToExport = SonarQubeLoader(it, activeRules).updateIssues(repository, checks, issues)
                                 val gson = Gson()
                                 gson.toJson(issuesToExport)
                             } else {

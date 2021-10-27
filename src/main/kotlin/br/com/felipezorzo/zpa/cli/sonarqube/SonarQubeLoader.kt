@@ -3,6 +3,7 @@ package br.com.felipezorzo.zpa.cli.sonarqube
 import br.com.felipezorzo.zpa.cli.InputFile
 import br.com.felipezorzo.zpa.cli.SonarQubeOptions
 import br.com.felipezorzo.zpa.cli.sonarreport.Issue
+import br.com.felipezorzo.zpa.cli.sonarreport.Rule
 import br.com.felipezorzo.zpa.cli.sonarreport.SonarPreviewReport
 import br.com.felipezorzo.zpa.cli.tracker.Tracker
 import com.google.protobuf.InvalidProtocolBufferException
@@ -11,10 +12,7 @@ import okhttp3.Credentials
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.sonar.plsqlopen.rules.Repository
-import org.sonar.plsqlopen.rules.ZpaChecks
-import org.sonar.plsqlopen.rules.ZpaRule
-import org.sonar.plsqlopen.rules.ZpaRuleKey
+import org.sonar.plsqlopen.rules.*
 import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import org.sonar.scanner.protocol.input.ScannerInput
@@ -23,7 +21,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 
-class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
+class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private val activeRules: ActiveRules) {
     fun updateIssues(repository: Repository, checks: ZpaChecks<PlSqlVisitor>, issues: List<ZpaIssue>): SonarPreviewReport {
         val serverIssues = downloadIssues()
 
@@ -32,9 +30,8 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
 
         val localIssues = issues.map {
             val ruleKey = checks.ruleKey(it.check) as ZpaRuleKey
-            val rule = repository.rule(ruleKey.rule()) as ZpaRule
 
-            LocalIssueAdapter(rule.key, it)
+            LocalIssueAdapter(ruleKey.toString(), it)
         }
 
         val trackerResult = Tracker<ServerIssueAdapter, LocalIssueAdapter>().track(
@@ -80,7 +77,17 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
             )
         }
 
-        return SonarPreviewReport(listOf(), issuesToExport, listOf(), "")
+        val rules = activeRules.findByRepository("zpa")
+            .filterIsInstance<ActiveRule>()
+            .filter {
+                issuesToExport.any { issue -> issue.rule == it.ruleKey().toString() }
+            }
+            .map {
+                val rule = repository.rule(it.ruleKey().rule()) as ZpaRule
+                Rule(it.ruleKey().toString(), rule.name, it.ruleKey().repository(), it.ruleKey().rule())
+            }
+
+        return SonarPreviewReport(listOf(), issuesToExport, rules, "")
     }
 
     private fun downloadIssues(): List<ScannerInput.ServerIssue> {
