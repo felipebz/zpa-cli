@@ -30,8 +30,9 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private va
 
         val localIssues = issues.map {
             val ruleKey = checks.ruleKey(it.check) as ZpaRuleKey
+            val rule = repository.rule(ruleKey.rule()) as ZpaRule
 
-            LocalIssueAdapter(ruleKey.toString(), it)
+            LocalIssueAdapter(ruleKey.toString(), rule, it)
         }
 
         val trackerResult = Tracker<ServerIssueAdapter, LocalIssueAdapter>().track(
@@ -70,7 +71,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private va
                 line = it.line,
                 message = it.message,
                 rule = it.ruleKey,
-                severity = "",//it.severity,
+                severity = it.severity,
                 startLine = it.line,
                 startOffset = it.startOffset,
                 status = "OPEN",
