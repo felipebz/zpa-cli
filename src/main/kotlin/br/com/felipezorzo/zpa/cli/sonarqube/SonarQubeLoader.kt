@@ -30,7 +30,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private va
 
         val localIssues = issues.map {
             val ruleKey = checks.ruleKey(it.check) as ZpaRuleKey
-            val rule = repository.rule(ruleKey.rule()) as ZpaRule
+            val rule = repository.rule(ruleKey.rule) as ZpaRule
 
             LocalIssueAdapter(ruleKey.toString(), rule, it)
         }
@@ -81,11 +81,11 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private va
         val rules = activeRules.findByRepository("zpa")
             .filterIsInstance<ActiveRule>()
             .filter {
-                issuesToExport.any { issue -> issue.rule == it.ruleKey().toString() }
+                issuesToExport.any { issue -> issue.rule == it.ruleKey.toString() }
             }
             .map {
-                val rule = repository.rule(it.ruleKey().rule()) as ZpaRule
-                Rule(it.ruleKey().toString(), rule.name, it.ruleKey().repository(), it.ruleKey().rule())
+                val rule = repository.rule(it.ruleKey.rule) as ZpaRule
+                Rule(it.ruleKey.toString(), rule.name, it.ruleKey.repository, it.ruleKey.rule)
             }
 
         return SonarPreviewReport(listOf(), issuesToExport, rules, "")

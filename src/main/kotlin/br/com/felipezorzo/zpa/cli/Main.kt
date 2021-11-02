@@ -177,7 +177,7 @@ class Main : CliktCommand(name = "zpa-cli") {
             }
 
             val ruleKey = checks.ruleKey(issue.check) as ZpaRuleKey
-            val rule = repository.rule(ruleKey.rule()) as ZpaRule
+            val rule = repository.rule(ruleKey.rule) as ZpaRule
 
             val type = when {
                 rule.tags.contains("vulnerability") -> "VULNERABILITY"
