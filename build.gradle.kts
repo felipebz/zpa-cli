@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 group = "com.felipebz.zpa"
-version = "1.2.0"
+version = "2.0.0-SNAPSHOT"
 
 plugins {
     `maven-publish`
