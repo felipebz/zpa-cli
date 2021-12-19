@@ -34,7 +34,7 @@ import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
 const val CONSOLE = "console"
 const val GENERIC_ISSUE_FORMAT = "sq-generic-issue-import"
-//const val SONAR_REPORT_FORMAT = "sq-issue-report"
+const val SONAR_REPORT_FORMAT = "sq-issue-report"
 
 class SonarQubeOptions : OptionGroup() {
     val sonarqubeUrl by option(help = "SonarQube server URL").required()
@@ -46,9 +46,9 @@ class Main : CliktCommand(name = "zpa-cli") {
     private val sources by option(help = "Folder with files").required()
     private val formsMetadata by option(help = "Oracle Forms metadata file").default("")
     private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps")
-    private val outputFormat by option(help = "Format of the output file").choice(CONSOLE, GENERIC_ISSUE_FORMAT/*, SONAR_REPORT_FORMAT*/).default(CONSOLE)
+    private val outputFormat by option(help = "Format of the output file").choice(CONSOLE, GENERIC_ISSUE_FORMAT, SONAR_REPORT_FORMAT).default(CONSOLE)
     private val outputFile by option(help = "Output filename").default("")
-    //private val sonarqubeOptions by SonarQubeOptions().cooccurring()
+    private val sonarqubeOptions by SonarQubeOptions().cooccurring()
 
     override fun run() {
         javaClass.getResourceAsStream("/logging.properties").use {
@@ -100,7 +100,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                     GENERIC_ISSUE_FORMAT -> {
                         exportToGenericIssueFormat(repository, checks, issues)
                     }
-                    /*SONAR_REPORT_FORMAT -> {
+                    SONAR_REPORT_FORMAT -> {
                         sonarqubeOptions?.let {
                             if (it.sonarqubeUrl.isNotEmpty()) {
                                 val issuesToExport = SonarQubeLoader(it, activeRules).updateIssues(repository, checks, issues)
@@ -110,7 +110,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                                 ""
                             }
                         }.orEmpty()
-                    }*/
+                    }
                     else -> {
                         ""
                     }
