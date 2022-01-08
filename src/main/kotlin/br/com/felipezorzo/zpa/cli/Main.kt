@@ -116,7 +116,9 @@ class Main : CliktCommand(name = "zpa-cli") {
                     }
                 }
 
-            File(outputFile).writeText(generatedOutput)
+            val file = File(outputFile)
+            file.parentFile.mkdirs()
+            file.writeText(generatedOutput)
         }
 
         LOG.info("Time elapsed: ${stopwatch.elapsed().toMillis()} ms")
