@@ -5,7 +5,11 @@ import org.sonar.scanner.protocol.input.ScannerInput
 
 class ServerIssueAdapter(private val serverIssue: ScannerInput.ServerIssue) : Trackable {
     override val ruleKey: String
-        get() = serverIssue.ruleKey
+        get() =
+            when (serverIssue.ruleRepository) {
+                "plsql" -> "zpa"
+                else -> serverIssue.ruleRepository
+            } + ":" + serverIssue.ruleKey
     override val message: String
         get() = serverIssue.msg
     override val line: Int
