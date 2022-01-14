@@ -35,8 +35,8 @@ tasks {
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { 
-        setUrl("https://pkgs.dev.azure.com/felipebz/z-plsql-analyzer/_packaging/public_feed/maven/v1")
+    maven {
+        setUrl("https://s01.oss.sonatype.org/content/repositories/snapshots/")
     }
 }
 
