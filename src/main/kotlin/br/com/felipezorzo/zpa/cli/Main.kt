@@ -116,7 +116,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                 }
 
             val file = File(outputFile)
-            file.parentFile.mkdirs()
+            file.parentFile?.mkdirs()
             file.writeText(generatedOutput)
         }
 
