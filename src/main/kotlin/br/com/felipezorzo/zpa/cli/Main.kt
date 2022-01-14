@@ -23,7 +23,6 @@ import org.sonar.plsqlopen.squid.ProgressReport
 import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plsqlopen.utils.log.Loggers
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
-import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -68,7 +67,7 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val activeRules = ActiveRules().addRepository(repository)
 
-        val checks = ZpaChecks<PlSqlVisitor>(activeRules, "zpa", ruleMetadataLoader)
+        val checks = ZpaChecks(activeRules, repository.key, ruleMetadataLoader)
                 .addAnnotatedChecks(CheckList.checks)
 
         val files = baseDir
@@ -145,7 +144,7 @@ class Main : CliktCommand(name = "zpa-cli") {
 
     private fun exportToGenericIssueFormat(
         repository: Repository,
-        checks: ZpaChecks<PlSqlVisitor>,
+        checks: ZpaChecks,
         issues: List<ZpaIssue>
     ): String {
         val genericIssues = mutableListOf<GenericIssue>()
@@ -180,6 +179,7 @@ class Main : CliktCommand(name = "zpa-cli") {
 
             val ruleKey = checks.ruleKey(issue.check) as ZpaRuleKey
             val rule = repository.rule(ruleKey.rule) as ZpaRule
+            val activeRule = issue.check.activeRule
 
             val type = when {
                 rule.tags.contains("vulnerability") -> "VULNERABILITY"
@@ -189,7 +189,7 @@ class Main : CliktCommand(name = "zpa-cli") {
 
             genericIssues += GenericIssue(
                 ruleId = rule.key,
-                severity = rule.severity,
+                severity = activeRule.severity,
                 type = type,
                 primaryLocation = primaryLocation,
                 duration = rule.remediationConstant,

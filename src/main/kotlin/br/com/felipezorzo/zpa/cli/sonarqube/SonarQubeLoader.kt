@@ -22,7 +22,7 @@ import java.util.*
 
 
 class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private val activeRules: ActiveRules) {
-    fun updateIssues(repository: Repository, checks: ZpaChecks<PlSqlVisitor>, issues: List<ZpaIssue>): SonarPreviewReport {
+    fun updateIssues(repository: Repository, checks: ZpaChecks, issues: List<ZpaIssue>): SonarPreviewReport {
         val serverIssues = downloadIssues()
 
         val analyzedFiles = issues.map { (it.file as InputFile).pathRelativeToBase }
@@ -120,5 +120,8 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private va
         }
         return list
     }
+
+    // https://sonarqube.felipezorzo.com.br/api/qualityprofiles/search?project=utPLSQL&language=plsqlopen
+    // https://sonarqube.felipezorzo.com.br/api/qualityprofiles/backup?qualityProfile=AWtYfkVdubfaqpwMOKk7&language=plsqlopen
 
 }

@@ -24,5 +24,5 @@ class LocalIssueAdapter(override val ruleKey: String, private val rule: ZpaRule,
     val endOffset: Int
         get() = localIssue.primaryLocation.endLineOffset()
     val severity: String
-        get() = rule.severity
+        get() = localIssue.check.activeRule.severity
 }
