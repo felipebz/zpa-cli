@@ -14,15 +14,18 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.sonar.plsqlopen.rules.*
 import org.sonar.plsqlopen.squid.ZpaIssue
-import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import org.sonar.scanner.protocol.input.ScannerInput
+import org.sonarqube.ws.client.HttpConnector
+import org.sonarqube.ws.client.WsClientFactories
+import org.sonarqube.ws.client.qualityprofiles.SearchRequest as QualityProfilesSearchRequest
+import org.sonarqube.ws.client.rules.SearchRequest as RulesSearchRequest
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
 
-class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private val activeRules: ActiveRules) {
-    fun updateIssues(repository: Repository, checks: ZpaChecks, issues: List<ZpaIssue>): SonarPreviewReport {
+class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
+    fun updateIssues(repository: Repository, checks: ZpaChecks, activeRules: ActiveRules, issues: List<ZpaIssue>): SonarPreviewReport {
         val serverIssues = downloadIssues()
 
         val analyzedFiles = issues.map { (it.file as InputFile).pathRelativeToBase }
@@ -121,7 +124,28 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions, private va
         return list
     }
 
-    // https://sonarqube.felipezorzo.com.br/api/qualityprofiles/search?project=utPLSQL&language=plsqlopen
-    // https://sonarqube.felipezorzo.com.br/api/qualityprofiles/backup?qualityProfile=AWtYfkVdubfaqpwMOKk7&language=plsqlopen
+    fun downloadQualityProfile(): List<ActiveRuleConfiguration> {
+        val client = WsClientFactories.getDefault()
+            .newClient(HttpConnector.newBuilder()
+                .url(sonarQubeOptions.sonarqubeUrl)
+                .credentials(sonarQubeOptions.sonarqubeToken, "")
+                .build())
 
+        val qualityProfiles = client.qualityprofiles().search(QualityProfilesSearchRequest()
+            .setLanguage("plsqlopen")
+            .setProject(sonarQubeOptions.sonarqubeKey))
+
+        val rules = client.rules().search(RulesSearchRequest()
+            .setActivation("true")
+            .setQprofile(qualityProfiles.profilesList[0].key)
+            .setF(listOf("repo", "params", "severity")))
+
+        return rules.rulesList.map { rule ->
+            var (repo, key) = rule.key.split(":")
+            repo = if (repo == "plsql") "zpa" else repo
+
+            ActiveRuleConfiguration(repo, key, rule.severity,
+                rule.params.paramsList.associate { it.key to it.defaultValue })
+        }
+    }
 }

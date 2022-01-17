@@ -46,6 +46,7 @@ dependencies {
     implementation("com.felipebz.zpa:zpa-checks:3.2.0-SNAPSHOT")
     implementation("com.google.guava:guava:31.0.1-jre")
     implementation("org.sonarsource.sonarqube:sonar-scanner-protocol:7.9")
+    implementation("org.sonarsource.sonarqube:sonar-ws:7.9")
     implementation("com.squareup.okhttp3:okhttp:4.9.2")
     testImplementation(kotlin("test"))
 }

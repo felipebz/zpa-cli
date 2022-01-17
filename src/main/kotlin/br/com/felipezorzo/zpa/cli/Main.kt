@@ -61,11 +61,21 @@ class Main : CliktCommand(name = "zpa-cli") {
         val baseDir = File(sources).absoluteFile
         val baseDirPath = baseDir.toPath()
 
+        var sonarqubeLoader: SonarQubeLoader? = null
+        sonarqubeOptions?.let {
+            if (it.sonarqubeUrl.isNotEmpty()) {
+                sonarqubeLoader = SonarQubeLoader(it)
+            }
+        }
+
         val repository = Repository("zpa")
         val ruleMetadataLoader = RuleMetadataLoader()
         CustomAnnotationBasedRulesDefinition.load(repository, "plsqlopen", CheckList.checks, ruleMetadataLoader)
 
+        val activeRulesOnSonarQube = sonarqubeLoader?.downloadQualityProfile() ?: emptyList()
+
         val activeRules = ActiveRules().addRepository(repository)
+            .configureRules(activeRulesOnSonarQube)
 
         val checks = ZpaChecks(activeRules, repository.key, ruleMetadataLoader)
                 .addAnnotatedChecks(CheckList.checks)
@@ -100,14 +110,10 @@ class Main : CliktCommand(name = "zpa-cli") {
                         exportToGenericIssueFormat(repository, checks, issues)
                     }
                     SONAR_REPORT_FORMAT -> {
-                        sonarqubeOptions?.let {
-                            if (it.sonarqubeUrl.isNotEmpty()) {
-                                val issuesToExport = SonarQubeLoader(it, activeRules).updateIssues(repository, checks, issues)
-                                val gson = Gson()
-                                gson.toJson(issuesToExport)
-                            } else {
-                                ""
-                            }
+                        sonarqubeLoader?.let {
+                            val issuesToExport = it.updateIssues(repository, checks, activeRules, issues)
+                            val gson = Gson()
+                            gson.toJson(issuesToExport)
                         }.orEmpty()
                     }
                     else -> {
