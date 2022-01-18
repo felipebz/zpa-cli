@@ -10,23 +10,26 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.google.protobuf.InvalidProtocolBufferException
 import com.google.protobuf.Parser
-import okhttp3.Credentials
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.sonar.plsqlopen.rules.*
 import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.scanner.protocol.input.ScannerInput
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClientFactories
+import org.sonarqube.ws.client.batch.IssuesRequest
 import org.sonarqube.ws.client.qualityprofiles.ExportRequest
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
-import org.sonarqube.ws.client.qualityprofiles.SearchRequest as QualityProfilesSearchRequest
+import org.sonarqube.ws.client.qualityprofiles.SearchRequest
 
 
 class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
+    private val client = WsClientFactories.getDefault()
+        .newClient(HttpConnector.newBuilder()
+            .url(sonarQubeOptions.sonarqubeUrl)
+            .credentials(sonarQubeOptions.sonarqubeToken, "")
+            .build())
+
     fun updateIssues(repository: Repository, checks: ZpaChecks, activeRules: ActiveRules, issues: List<ZpaIssue>): SonarPreviewReport {
         val serverIssues = downloadIssues()
 
@@ -97,20 +100,10 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
     }
 
     private fun downloadIssues(): List<ScannerInput.ServerIssue> {
-        val client = OkHttpClient()
-        val credential = Credentials.basic(sonarQubeOptions.sonarqubeToken, "")
+        val response = CustomBatchService(client.wsConnector()).issuesStream(IssuesRequest()
+            .setKey(sonarQubeOptions.sonarqubeKey))
 
-        val url = sonarQubeOptions.sonarqubeUrl.toHttpUrl().newBuilder()
-            .addPathSegments("batch/issues")
-            .addQueryParameter("key", sonarQubeOptions.sonarqubeKey)
-            .build()
-
-        val request = Request.Builder()
-            .url(url)
-            .addHeader("Authorization", credential)
-            .build()
-        val response = client.newCall(request).execute()
-        return readMessages(response.body?.byteStream(), ScannerInput.ServerIssue.parser())
+        return readMessages(response, ScannerInput.ServerIssue.parser())
     }
 
     private fun <T> readMessages(input: InputStream?, parser: Parser<T>): List<T> {
@@ -127,13 +120,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
     }
 
     fun downloadQualityProfile(): List<ActiveRuleConfiguration> {
-        val client = WsClientFactories.getDefault()
-            .newClient(HttpConnector.newBuilder()
-                .url(sonarQubeOptions.sonarqubeUrl)
-                .credentials(sonarQubeOptions.sonarqubeToken, "")
-                .build())
-
-        val qualityProfiles = client.qualityprofiles().search(QualityProfilesSearchRequest()
+        val qualityProfiles = client.qualityprofiles().search(SearchRequest()
             .setLanguage("plsqlopen")
             .setProject(sonarQubeOptions.sonarqubeKey))
 
