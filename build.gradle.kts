@@ -48,6 +48,8 @@ dependencies {
     implementation("org.sonarsource.sonarqube:sonar-scanner-protocol:7.9")
     implementation("org.sonarsource.sonarqube:sonar-ws:7.9")
     implementation("com.squareup.okhttp3:okhttp:4.9.2")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
     testImplementation(kotlin("test"))
 }
 

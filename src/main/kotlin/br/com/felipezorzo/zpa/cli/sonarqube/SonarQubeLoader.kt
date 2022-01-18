@@ -6,6 +6,8 @@ import br.com.felipezorzo.zpa.cli.sonarreport.Issue
 import br.com.felipezorzo.zpa.cli.sonarreport.Rule
 import br.com.felipezorzo.zpa.cli.sonarreport.SonarPreviewReport
 import br.com.felipezorzo.zpa.cli.tracker.Tracker
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.google.protobuf.InvalidProtocolBufferException
 import com.google.protobuf.Parser
 import okhttp3.Credentials
@@ -17,11 +19,11 @@ import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.scanner.protocol.input.ScannerInput
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClientFactories
-import org.sonarqube.ws.client.qualityprofiles.SearchRequest as QualityProfilesSearchRequest
-import org.sonarqube.ws.client.rules.SearchRequest as RulesSearchRequest
+import org.sonarqube.ws.client.qualityprofiles.ExportRequest
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import org.sonarqube.ws.client.qualityprofiles.SearchRequest as QualityProfilesSearchRequest
 
 
 class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
@@ -135,17 +137,16 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
             .setLanguage("plsqlopen")
             .setProject(sonarQubeOptions.sonarqubeKey))
 
-        val rules = client.rules().search(RulesSearchRequest()
-            .setActivation("true")
-            .setQprofile(qualityProfiles.profilesList[0].key)
-            .setF(listOf("repo", "params", "severity")))
+        val qualityProfile = client.qualityprofiles().export(ExportRequest()
+            .setLanguage("plsqlopen")
+            .setQualityProfile(qualityProfiles.profilesList[0].name))
 
-        return rules.rulesList.map { rule ->
-            var (repo, key) = rule.key.split(":")
-            repo = if (repo == "plsql") "zpa" else repo
+        val xmlMapper = XmlMapper().registerKotlinModule()
 
-            ActiveRuleConfiguration(repo, key, rule.severity,
-                rule.params.paramsList.associate { it.key to it.defaultValue })
-        }
+        return xmlMapper.readValue(qualityProfile, QualityProfile::class.java)
+            .rules.map {
+                val repo = if (it.repositoryKey == "plsql") "zpa" else it.repositoryKey
+                ActiveRuleConfiguration(repo, it.key, it.priority, it.parameters.associate { p -> p.key to p.value })
+            }
     }
 }
