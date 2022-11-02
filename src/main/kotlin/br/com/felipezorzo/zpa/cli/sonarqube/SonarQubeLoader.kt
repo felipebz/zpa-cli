@@ -17,10 +17,10 @@ import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClientFactories
 import org.sonarqube.ws.client.batch.IssuesRequest
 import org.sonarqube.ws.client.qualityprofiles.ExportRequest
+import org.sonarqube.ws.client.qualityprofiles.SearchRequest
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
-import org.sonarqube.ws.client.qualityprofiles.SearchRequest
 
 
 class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
@@ -33,7 +33,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
     fun updateIssues(repository: Repository, checks: ZpaChecks, activeRules: ActiveRules, issues: List<ZpaIssue>): SonarPreviewReport {
         val serverIssues = downloadIssues()
 
-        val analyzedFiles = issues.map { (it.file as InputFile).pathRelativeToBase }
+        val analyzedFiles = issues.map { (it.file as InputFile).pathRelativeToBase }.toSet()
         val filteredIssues = serverIssues.filter { analyzedFiles.contains(it.path) }
 
         val localIssues = issues.map {
