@@ -1,5 +1,6 @@
 package br.com.felipezorzo.zpa.cli.sonarqube
 
+import br.com.felipezorzo.zpa.cli.InputFile
 import br.com.felipezorzo.zpa.cli.tracker.Trackable
 import org.sonar.plsqlopen.rules.ZpaRule
 import org.sonar.plsqlopen.squid.ZpaIssue
@@ -9,8 +10,8 @@ class LocalIssueAdapter(override val ruleKey: String, private val rule: ZpaRule,
         get() = localIssue.primaryLocation.message()
     override val line: Int
         get() = localIssue.primaryLocation.startLine()
-    override val lineHash: Int
-        get() = localIssue.primaryLocation.startLine().hashCode()
+    override val lineHash: String
+        get() = (localIssue.file as InputFile).getLineHash(localIssue.primaryLocation.startLine())
     override val textRangeHash: Int
         get() = localIssue.primaryLocation.startLine().hashCode()
     override val serverIssueKey: String

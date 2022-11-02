@@ -14,8 +14,8 @@ class ServerIssueAdapter(private val serverIssue: ScannerInput.ServerIssue) : Tr
         get() = serverIssue.msg
     override val line: Int
         get() = serverIssue.line
-    override val lineHash: Int
-        get() = serverIssue.line.hashCode()
+    override val lineHash: String
+        get() = serverIssue.checksum
     override val textRangeHash: Int
         get() = serverIssue.line.hashCode()
     override val serverIssueKey: String
