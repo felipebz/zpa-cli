@@ -1,12 +1,12 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 group = "com.felipebz.zpa"
 version = "2.0.0-SNAPSHOT"
 
 plugins {
     `maven-publish`
-    kotlin("jvm") version "1.7.20"
+    kotlin("jvm") version "1.7.21"
     application
     id("com.github.johnrengelman.shadow") version "7.1.0"
 }
