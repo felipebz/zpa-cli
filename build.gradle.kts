@@ -47,15 +47,15 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.ajalt.clikt:clikt:3.3.0")
+    implementation("com.github.ajalt.clikt:clikt:3.5.0")
     implementation("com.felipebz.zpa:zpa-core:3.2.0-SNAPSHOT")
     implementation("com.felipebz.zpa:zpa-checks:3.2.0-SNAPSHOT")
-    implementation("com.google.guava:guava:31.0.1-jre")
+    implementation("com.google.guava:guava:31.1-jre")
     implementation("org.sonarsource.sonarqube:sonar-scanner-protocol:7.9")
     implementation("org.sonarsource.sonarqube:sonar-ws:7.9")
-    implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0")
     testImplementation(kotlin("test"))
 }
 
