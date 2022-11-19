@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk16:alpine-jre
+FROM eclipse-temurin:17-jre-alpine
 
 COPY build/distributions/zpa-cli-shadow-*.tar /opt/
 
