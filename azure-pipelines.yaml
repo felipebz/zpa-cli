@@ -28,6 +28,15 @@ steps:
       OSSRH_USERNAME: $(OSSRH_USERNAME)
       OSSRH_PASSWORD: $(OSSRH_PASSWORD)
 
+  - task: Gradle@2
+    inputs:
+      gradleWrapperFile: 'gradlew'
+      jdkVersionOption: '1.17'
+      tasks: 'runtimeZip jreleaserFullRelease'
+      options: '--build-cache'
+    env:
+      JRELEASER_GITHUB_TOKEN: $(JRELEASER_GITHUB_TOKEN)
+
   - script: |
       # stop the Gradle daemon to ensure no files are left open (impacting the save cache operation later)
       ./gradlew --stop
@@ -38,6 +47,11 @@ steps:
       contents: 'build/distributions/*'
       targetFolder: $(Build.ArtifactStagingDirectory)
       flattenFolders: true
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: zpa-cli
 
   - task: Docker@2
     displayName: Build Docker image
