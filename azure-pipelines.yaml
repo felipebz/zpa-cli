@@ -21,7 +21,7 @@ steps:
 
   - task: Gradle@2
     inputs:
-      jdkVersionOption: 1.11
+      jdkVersionOption: 1.17
       tasks: "build publish"
       options: '--build-cache'
     env:
@@ -38,11 +38,6 @@ steps:
       contents: 'build/distributions/*'
       targetFolder: $(Build.ArtifactStagingDirectory)
       flattenFolders: true
-
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: $(Build.ArtifactStagingDirectory)
-      artifactName: zpa-cli
 
   - task: Docker@2
     displayName: Build Docker image
