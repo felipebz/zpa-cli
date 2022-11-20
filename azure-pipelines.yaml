@@ -32,7 +32,7 @@ steps:
     inputs:
       gradleWrapperFile: 'gradlew'
       jdkVersionOption: '1.17'
-      tasks: 'runtimeZip jreleaserFullRelease'
+      tasks: 'jreleaserAssemble jreleaserFullRelease'
       options: '--build-cache'
     env:
       JRELEASER_GITHUB_TOKEN: $(JRELEASER_GITHUB_TOKEN)

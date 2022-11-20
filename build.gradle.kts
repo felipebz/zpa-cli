@@ -10,7 +10,6 @@ plugins {
     application
     id("com.github.johnrengelman.shadow") version "7.1.0"
     id("org.jreleaser") version "1.3.1"
-    id("org.beryx.runtime") version "1.12.7"
     id("org.jreleaser.jdks") version "1.3.1"
 }
 
@@ -119,19 +118,6 @@ jdks {
     }
 }
 
-runtime {
-    options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
-    modules.set(listOf("java.logging", "java.xml"))
-    imageZip.set(file("$buildDir/zpa-cli-$version.zip"))
-
-    jdksToBuild.forEach {
-        targetPlatform("${it.os}_${it.arch}") {
-            val additionalDir = if (it.os == "mac") "/Contents/Home" else ""
-            setJdkHome("build/jdks/${it.os}_${it.arch}/jdk-$jdkBuild$additionalDir")
-        }
-    }
-}
-
 jreleaser {
     project {
         description.set("The command-line interface of the Z PL/SQL Analyzer.")
@@ -141,6 +127,44 @@ jreleaser {
             homepage.set("https://felipezorzo.com.br/zpa/")
         }
         inceptionYear.set("2019")
+    }
+    assemble {
+        jlink {
+            create("zpa-cli") {
+                active.set(org.jreleaser.model.Active.ALWAYS)
+                exported.set(true)
+                stereotype.set(org.jreleaser.model.Stereotype.CLI)
+                imageName.set("{{distributionName}}-{{projectEffectiveVersion}}")
+                moduleNames.set(listOf("java.logging", "java.xml"))
+                jdeps {
+                    multiRelease.set("base")
+                    ignoreMissingDeps.set(true)
+                }
+                jdksToBuild.forEach {
+                    targetJdk {
+                        val jreleaserOs = if (it.os == "mac") "osx" else it.os
+                        val jreleaseArch = when (it.arch) {
+                            "aarch64" -> "aarch_64"
+                            "x64" -> "x86_64"
+                            else -> ""
+                        }
+                        val additionalDir = if (it.os == "mac") "/Contents/Home" else ""
+                        path.set(file("build/jdks/${it.os}_${it.arch}/jdk-$jdkBuild$additionalDir"))
+                        platform.set("$jreleaserOs-$jreleaseArch")
+                    }
+                }
+                jdk {
+                    val jdkPath = javaToolchains.launcherFor {
+                        languageVersion.set(JavaLanguageVersion.of(17))
+                    }.get().metadata.installationPath
+
+                    path.set(file(jdkPath))
+                }
+                mainJar {
+                    path.set(file("build/libs/zpa-cli-{{projectVersion}}-all.jar"))
+                }
+            }
+        }
     }
     release {
         github {
@@ -152,18 +176,6 @@ jreleaser {
         create("zpa-cli") {
             artifact {
                 path.set(file("build/distributions/{{distributionName}}-{{projectVersion}}.zip"))
-            }
-            jdksToBuild.forEach {
-                val jreleaserOs = if (it.os == "mac") "osx" else it.os
-                val jreleaseArch = when (it.arch) {
-                    "aarch64" -> "aarch_64"
-                    "x64" -> "x86_64"
-                    else -> ""
-                }
-                artifact {
-                    path.set(file("build/{{distributionName}}-{{projectVersion}}-${it.os}_${it.arch}.zip"))
-                    platform.set("$jreleaserOs-$jreleaseArch")
-                }
             }
         }
     }
