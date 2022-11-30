@@ -170,6 +170,11 @@ jreleaser {
         github {
             repoOwner.set("felipebz")
             overwrite.set(true)
+            changelog {
+                formatted.set(org.jreleaser.model.Active.ALWAYS)
+                preset.set("conventional-commits")
+                format.set("- {{commitShortHash}} {{commitTitle}}")
+            }
         }
     }
     distributions {
