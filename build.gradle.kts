@@ -174,6 +174,12 @@ jreleaser {
                 formatted.set(org.jreleaser.model.Active.ALWAYS)
                 preset.set("conventional-commits")
                 format.set("- {{commitShortHash}} {{commitTitle}}")
+                contributors {
+                    enabled.set(false)
+                }
+                hide {
+                    uncategorized.set(true)
+                }
             }
         }
     }
