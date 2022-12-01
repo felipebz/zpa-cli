@@ -134,7 +134,7 @@ jreleaser {
                 active.set(org.jreleaser.model.Active.ALWAYS)
                 exported.set(true)
                 stereotype.set(org.jreleaser.model.Stereotype.CLI)
-                imageName.set("{{distributionName}}-{{projectEffectiveVersion}}")
+                imageName.set("{{distributionName}}-{{projectVersion}}")
                 moduleNames.set(listOf("java.logging", "java.xml"))
                 jdeps {
                     multiRelease.set("base")
@@ -168,12 +168,12 @@ jreleaser {
     }
     release {
         github {
-            repoOwner.set("felipebz")
             overwrite.set(true)
             changelog {
                 formatted.set(org.jreleaser.model.Active.ALWAYS)
                 preset.set("conventional-commits")
                 format.set("- {{commitShortHash}} {{commitTitle}}")
+                contentTemplate.set(file("template/changelog.tpl"))
                 contributors {
                     enabled.set(false)
                 }
