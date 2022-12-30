@@ -9,8 +9,8 @@ plugins {
     kotlin("jvm") version "1.8.0"
     application
     id("com.github.johnrengelman.shadow") version "7.1.0"
-    id("org.jreleaser") version "1.3.1"
-    id("org.jreleaser.jdks") version "1.3.1"
+    id("org.jreleaser") version "1.4.0"
+    id("org.jreleaser.jdks") version "1.4.0"
 }
 
 java {
