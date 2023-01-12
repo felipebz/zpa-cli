@@ -1,4 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 group = "com.felipebz.zpa"
@@ -8,7 +7,6 @@ plugins {
     `maven-publish`
     kotlin("jvm") version "1.8.0"
     application
-    id("com.github.johnrengelman.shadow") version "7.1.0"
     id("org.jreleaser") version "1.4.0"
     id("org.jreleaser.jdks") version "1.4.0"
 }
@@ -22,21 +20,6 @@ java {
 tasks.withType<KotlinJvmCompile> {
     kotlinOptions {
         jvmTarget = "17"
-    }
-}
-
-tasks.named<ShadowJar>("shadowJar") {
-    archiveBaseName.set("zpa-cli")
-    mergeServiceFiles()
-    minimize()
-    manifest {
-        attributes(mapOf("Main-Class" to "br.com.felipezorzo.zpa.cli.MainKt"))
-    }
-}
-
-tasks {
-    build {
-        dependsOn(shadowJar)
     }
 }
 
@@ -64,6 +47,12 @@ dependencies {
 application {
     mainClass.set("br.com.felipezorzo.zpa.cli.MainKt")
 }
+
+val copyDependencies = tasks.create<Sync>("copyDependencies") {
+    from(configurations.runtimeClasspath)
+    into("${buildDir}/dependencies/flat")
+}
+tasks["assemble"].dependsOn(copyDependencies)
 
 publishing {
     repositories {
@@ -161,7 +150,10 @@ jreleaser {
                     path.set(file(jdkPath))
                 }
                 mainJar {
-                    path.set(file("build/libs/zpa-cli-{{projectVersion}}-all.jar"))
+                    path.set(file("build/libs/zpa-cli-{{projectVersion}}.jar"))
+                }
+                jars {
+                    pattern.set("build/dependencies/flat/*.jar")
                 }
             }
         }
