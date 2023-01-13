@@ -1,12 +1,8 @@
-FROM eclipse-temurin:17-jre-alpine
+FROM ubuntu:latest
 
-COPY build/distributions/zpa-cli-shadow-*.tar /opt/
+ADD build/jreleaser/assemble/zpa-cli/jlink/zpa-cli-*-linux-x86_64.tar.gz /opt/
 
-RUN cd /opt && \
-    mv zpa-cli-shadow-*.tar zpa-cli.tar && \
-    tar xvf zpa-cli.tar && \
-    rm -f zpa-cli.tar && \
-    mv -f zpa-cli-*/ zpa-cli/
+RUN mv /opt/zpa-cli-*/ /opt/zpa-cli/
 
 ENV PATH=/opt/zpa-cli/bin:$PATH
 
