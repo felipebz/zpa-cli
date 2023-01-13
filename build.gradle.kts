@@ -140,6 +140,7 @@ jreleaser {
                         val additionalDir = if (it.os == "mac") "/Contents/Home" else ""
                         path.set(file("build/jdks/${it.os}_${it.arch}/jdk-$jdkBuild$additionalDir"))
                         platform.set("$jreleaserOs-$jreleaseArch")
+                        extraProperties.put("archiveFormat", if (jreleaserOs == "windows") "ZIP" else "TAR_GZ")
                     }
                 }
                 jdk {
