@@ -1,6 +1,6 @@
-FROM ubuntu:latest
+FROM alpine:latest
 
-ADD build/jreleaser/assemble/zpa-cli/jlink/zpa-cli-*-linux-x86_64.tar.gz /opt/
+ADD build/jreleaser/assemble/zpa-cli/jlink/zpa-cli-*-linux_musl-x86_64.tar.gz /opt/
 
 RUN mv /opt/zpa-cli-*/ /opt/zpa-cli/
 

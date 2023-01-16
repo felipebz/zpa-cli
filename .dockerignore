@@ -2,4 +2,4 @@ build/
 source-test/
 .gradle/
 !build/distributions/zpa-cli-*.tar
-!build/jreleaser/assemble/zpa-cli/jlink/zpa-cli-*-linux-x86_64.tar.gz
+!build/jreleaser/assemble/zpa-cli/jlink/zpa-cli-*-linux_musl-x86_64.tar.gz
