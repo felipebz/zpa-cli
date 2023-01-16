@@ -22,7 +22,7 @@ steps:
   - task: Gradle@2
     inputs:
       jdkVersionOption: 1.17
-      tasks: "build publish"
+      tasks: "build publish copyJdksToCache"
       options: '--build-cache'
     env:
       OSSRH_USERNAME: $(OSSRH_USERNAME)
