@@ -83,24 +83,63 @@ publishing {
     }
 }
 
-data class Jdk(val arch: String, val os: String, val extension: String, val checksum: String)
+data class Jdk(val arch: String, val os: String, val extension: String, val checksum: String, val platform: String = os)
 
 val baseJdkUrl = "https://github.com/adoptium/temurin17-binaries/releases/download"
 val jdkBuild = "17.0.5+8"
 val jdkVersion = jdkBuild.split(".").first()
 val jdkBuildFilename = jdkBuild.replace("+", "_")
 val jdksToBuild = listOf(
-    Jdk("x64", "linux", "tar.gz", "482180725ceca472e12a8e6d1a4af23d608d78287a77d963335e2a0156a020af"),
-    Jdk("aarch64", "linux", "tar.gz", "1c26c0e09f1641a666d6740d802beb81e12180abaea07b47c409d30c7f368109"),
-    Jdk("x64", "mac", "tar.gz", "94fe50982b09a179e603a096e83fd8e59fd12c0ae4bcb37ae35f00ef30a75d64"),
-    Jdk("aarch64", "mac", "tar.gz", "2dc3e425b52d1cd2915d93af5e468596b9e6a90112056abdcebac8b65bf57049"),
-    Jdk("x64", "windows", "zip", "3cdcd859c8421a0681e260dc4fbf46b37fb1211f47beb2326a00398ecc52fde0"),
+    Jdk(
+        arch = "x64",
+        os = "linux",
+        extension = "tar.gz",
+        checksum = "482180725ceca472e12a8e6d1a4af23d608d78287a77d963335e2a0156a020af"
+    ),
+
+    Jdk(
+        arch = "aarch64",
+        os = "linux",
+        extension = "tar.gz",
+        checksum = "1c26c0e09f1641a666d6740d802beb81e12180abaea07b47c409d30c7f368109"
+    ),
+
+    Jdk(
+        arch = "x64",
+        os = "mac",
+        extension = "tar.gz",
+        checksum = "94fe50982b09a179e603a096e83fd8e59fd12c0ae4bcb37ae35f00ef30a75d64",
+        platform = "osx"
+    ),
+
+    Jdk(
+        arch = "aarch64",
+        os = "mac",
+        extension = "tar.gz",
+        checksum = "2dc3e425b52d1cd2915d93af5e468596b9e6a90112056abdcebac8b65bf57049",
+        platform = "osx"
+    ),
+
+    Jdk(
+        arch = "x64",
+        os = "windows",
+        extension = "zip",
+        checksum = "3cdcd859c8421a0681e260dc4fbf46b37fb1211f47beb2326a00398ecc52fde0"
+    ),
+
+    Jdk(
+        arch = "x64",
+        os = "alpine-linux",
+        extension = "tar.gz",
+        checksum = "cb154396ff3bfb6a9082e3640c564643d31ecae1792fab0956149ed5258ad84b",
+        platform = "linux_musl"
+    ),
 )
 
 jdks {
     jdksToBuild.forEach {
-        create("${it.os}_${it.arch}") {
-            platform.set(it.os)
+        create("${it.platform}_${it.arch}") {
+            platform.set(it.platform)
             url.set("$baseJdkUrl/jdk-$jdkBuild/OpenJDK${jdkVersion}U-jdk_${it.arch}_${it.os}_hotspot_$jdkBuildFilename.${it.extension}")
             checksum.set(it.checksum)
         }
@@ -131,14 +170,14 @@ jreleaser {
                 }
                 jdksToBuild.forEach {
                     targetJdk {
-                        val jreleaserOs = if (it.os == "mac") "osx" else it.os
+                        val jreleaserOs = it.platform
                         val jreleaseArch = when (it.arch) {
                             "aarch64" -> "aarch_64"
                             "x64" -> "x86_64"
                             else -> ""
                         }
                         val additionalDir = if (it.os == "mac") "/Contents/Home" else ""
-                        path.set(file("build/jdks/${it.os}_${it.arch}/jdk-$jdkBuild$additionalDir"))
+                        path.set(file("build/jdks/${it.platform}_${it.arch}/jdk-$jdkBuild$additionalDir"))
                         platform.set("$jreleaserOs-$jreleaseArch")
                         extraProperties.put("archiveFormat", if (jreleaserOs == "windows") "ZIP" else "TAR_GZ")
                     }
