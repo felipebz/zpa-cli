@@ -33,8 +33,8 @@ repositories {
 
 dependencies {
     implementation("com.github.ajalt.clikt:clikt:3.5.0")
-    implementation("com.felipebz.zpa:zpa-core:3.2.0")
-    implementation("com.felipebz.zpa:zpa-checks:3.2.0")
+    implementation("com.felipebz.zpa:zpa-core:3.3.0-SNAPSHOT")
+    implementation("com.felipebz.zpa:zpa-checks:3.3.0-SNAPSHOT")
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.sonarsource.sonarqube:sonar-scanner-protocol:7.9")
     implementation("org.sonarsource.sonarqube:sonar-ws:7.9")

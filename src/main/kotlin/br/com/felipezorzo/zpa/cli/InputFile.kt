@@ -18,9 +18,11 @@ class InputFile(private val type: PlSqlFile.Type,
             return it.bufferedReader(charset).use { r -> r.readText() }
         }
 
-    override fun fileName(): String  = file.name
+    override fun fileName(): String = file.name
 
     override fun type(): PlSqlFile.Type = type
+
+    override fun path(): Path = file.toPath()
 
     private val lineHashes: Array<String> by lazy {
         contents().lineSequence().map {
