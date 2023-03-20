@@ -7,8 +7,8 @@ plugins {
     `maven-publish`
     kotlin("jvm") version "1.8.10"
     application
-    id("org.jreleaser") version "1.4.0"
-    id("org.jreleaser.jdks") version "1.4.0"
+    id("org.jreleaser") version "1.5.1"
+    id("org.jreleaser.jdks") version "1.5.1"
 }
 
 java {
@@ -155,6 +155,9 @@ jreleaser {
             homepage.set("https://felipezorzo.com.br/zpa/")
         }
         inceptionYear.set("2019")
+        snapshot {
+            fullChangelog.set(true)
+        }
     }
     assemble {
         jlink {
