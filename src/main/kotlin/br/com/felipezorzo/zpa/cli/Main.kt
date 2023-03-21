@@ -143,7 +143,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                 if (startColumn != -1) {
                     positionFormatted += ":$startColumn"
                 }
-                println("${positionFormatted.padEnd(10)}${severity.padEnd(15)}${${issue.primaryLocation.message()}")
+                 println("${positionFormatted.padEnd(10)}${severity.padEnd(15)}${issue.primaryLocation.message()}")
             }
 
             println("")
