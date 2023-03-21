@@ -23,7 +23,7 @@ steps:
     inputs:
       jdkVersionOption: 1.17
       tasks: "build publish copyJdksToCache"
-      options: '--build-cache'
+      options: '--build-cache --refresh-dependencies'
     env:
       OSSRH_USERNAME: $(OSSRH_USERNAME)
       OSSRH_PASSWORD: $(OSSRH_PASSWORD)
