@@ -136,12 +136,14 @@ class Main : CliktCommand(name = "zpa-cli") {
             for (issue in fileIssues.sortedWith(compareBy({ it.primaryLocation.startLine() }, { it.primaryLocation.startLineOffset() }))) {
                 val startLine = issue.primaryLocation.startLine()
                 val startColumn = issue.primaryLocation.startLineOffset()
+                val activeRule = issue.check.activeRule
+                var severity = activeRule.severity
 
                 var positionFormatted = "$startLine"
                 if (startColumn != -1) {
                     positionFormatted += ":$startColumn"
                 }
-                println("${positionFormatted.padEnd(10)}${issue.primaryLocation.message()}")
+                println("${positionFormatted.padEnd(10)}${severity.padEnd(15)}${issue.primaryLocation.message()}")
             }
 
             println("")
