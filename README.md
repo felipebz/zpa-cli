@@ -44,3 +44,7 @@ sonar-scanner
 ```
 
 Check the [demo project on SonarCloud](https://sonarcloud.io/project/issues?id=utPLSQL-zpa-demo&resolved=false)!
+
+## Contributing
+
+Please read our [contributing guidelines](CONTRIBUTING.md) to see how you can contribute to this project.
