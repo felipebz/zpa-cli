@@ -33,8 +33,7 @@ repositories {
 
 dependencies {
     implementation("com.github.ajalt.clikt:clikt:3.5.0")
-    implementation("com.felipebz.zpa:zpa-core:3.3.0-SNAPSHOT")
-    implementation("com.felipebz.zpa:zpa-checks:3.3.0-SNAPSHOT")
+    implementation("com.felipebz.zpa:sonar-zpa-plugin:3.3.0-SNAPSHOT")
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.sonarsource.sonarqube:sonar-scanner-protocol:7.9")
     implementation("org.sonarsource.sonarqube:sonar-ws:7.9")
@@ -163,7 +162,7 @@ jreleaser {
                 exported.set(true)
                 stereotype.set(org.jreleaser.model.Stereotype.CLI)
                 imageName.set("{{distributionName}}-{{projectVersion}}")
-                moduleNames.set(listOf("java.logging", "java.xml"))
+                moduleNames.set(listOf("java.logging", "java.xml", "java.sql"))
                 jdeps {
                     multiRelease.set("base")
                     ignoreMissingDeps.set(true)
