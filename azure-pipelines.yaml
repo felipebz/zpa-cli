@@ -19,7 +19,7 @@ steps:
         gradle
       path: $(Pipeline.Workspace)/.cache
 
-  - task: Gradle@2
+  - task: Gradle@3
     inputs:
       jdkVersionOption: 1.17
       tasks: "build publish copyJdksToCache"
@@ -28,7 +28,7 @@ steps:
       OSSRH_USERNAME: $(OSSRH_USERNAME)
       OSSRH_PASSWORD: $(OSSRH_PASSWORD)
 
-  - task: Gradle@2
+  - task: Gradle@3
     inputs:
       gradleWrapperFile: 'gradlew'
       jdkVersionOption: '1.17'
