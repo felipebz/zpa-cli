@@ -10,7 +10,9 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.google.protobuf.InvalidProtocolBufferException
 import com.google.protobuf.Parser
-import org.sonar.plsqlopen.rules.*
+import org.sonar.plsqlopen.rules.ActiveRule
+import org.sonar.plsqlopen.rules.ActiveRuleConfiguration
+import org.sonar.plsqlopen.rules.ActiveRules
 import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.scanner.protocol.input.ScannerInput
 import org.sonarqube.ws.client.HttpConnector
@@ -30,17 +32,14 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
             .credentials(sonarQubeOptions.sonarqubeToken, "")
             .build())
 
-    fun updateIssues(repository: Repository, checks: ZpaChecks, activeRules: ActiveRules, issues: List<ZpaIssue>): SonarPreviewReport {
+    fun updateIssues(activeRules: ActiveRules, issues: List<ZpaIssue>): SonarPreviewReport {
         val serverIssues = downloadIssues()
 
         val analyzedFiles = issues.map { (it.file as InputFile).pathRelativeToBase }.toSet()
         val filteredIssues = serverIssues.filter { analyzedFiles.contains(it.path) }
 
         val localIssues = issues.map {
-            val ruleKey = checks.ruleKey(it.check) as ZpaRuleKey
-            val rule = repository.rule(ruleKey.rule) as ZpaRule
-
-            LocalIssueAdapter(ruleKey.toString(), rule, it)
+            LocalIssueAdapter(it.check.activeRule.ruleKey.toString(), it)
         }
 
         val trackerResult = Tracker<ServerIssueAdapter, LocalIssueAdapter>().track(
@@ -92,8 +91,7 @@ class SonarQubeLoader(private val sonarQubeOptions: SonarQubeOptions) {
                 issuesToExport.any { issue -> issue.rule == it.ruleKey.toString() }
             }
             .map {
-                val rule = repository.rule(it.ruleKey.rule) as ZpaRule
-                Rule(it.ruleKey.toString(), rule.name, it.ruleKey.repository, it.ruleKey.rule)
+                Rule(it.ruleKey.toString(), it.name, it.ruleKey.repository, it.ruleKey.rule)
             }
 
         return SonarPreviewReport(listOf(), issuesToExport, rules, "")

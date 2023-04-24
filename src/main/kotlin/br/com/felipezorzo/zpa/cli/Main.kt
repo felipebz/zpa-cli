@@ -15,14 +15,17 @@ import com.github.ajalt.clikt.parameters.types.choice
 import com.google.common.base.Stopwatch
 import com.google.gson.Gson
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
-import org.sonar.plsqlopen.checks.CheckList
 import org.sonar.plsqlopen.metadata.FormsMetadata
-import org.sonar.plsqlopen.rules.*
+import org.sonar.plsqlopen.rules.ActiveRules
+import org.sonar.plsqlopen.rules.Repository
+import org.sonar.plsqlopen.rules.RuleMetadataLoader
+import org.sonar.plsqlopen.rules.ZpaChecks
 import org.sonar.plsqlopen.squid.AstScanner
 import org.sonar.plsqlopen.squid.ProgressReport
 import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plsqlopen.utils.log.Loggers
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
+import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -68,17 +71,27 @@ class Main : CliktCommand(name = "zpa-cli") {
             }
         }
 
-        val repository = Repository("zpa")
-        val ruleMetadataLoader = RuleMetadataLoader()
-        CustomAnnotationBasedRulesDefinition.load(repository, "plsqlopen", CheckList.checks, ruleMetadataLoader)
-
         val activeRulesOnSonarQube = sonarqubeLoader?.downloadQualityProfile() ?: emptyList()
+        val activeRules = ActiveRules().configureRules(activeRulesOnSonarQube)
 
-        val activeRules = ActiveRules().addRepository(repository)
-            .configureRules(activeRulesOnSonarQube)
+        val ruleMetadataLoader = RuleMetadataLoader()
 
-        val checks = ZpaChecks(activeRules, repository.key, ruleMetadataLoader)
-                .addAnnotatedChecks(CheckList.checks)
+        val checkList = mutableListOf<PlSqlVisitor>()
+
+        val rulesDefinitions= listOf(DefaultRulesDefinition())
+
+        for (rulesDefinition in rulesDefinitions) {
+            val repository = Repository(rulesDefinition.repositoryKey())
+            CustomAnnotationBasedRulesDefinition.load(repository, "plsqlopen",
+                rulesDefinition.checkClasses().toList(), ruleMetadataLoader)
+
+            activeRules.addRepository(repository)
+
+            val checks = ZpaChecks(activeRules, repository.key, ruleMetadataLoader)
+                .addAnnotatedChecks(rulesDefinition.checkClasses().toList())
+
+            checkList.addAll(checks.all())
+        }
 
         val files = baseDir
                 .walkTopDown()
@@ -91,7 +104,7 @@ class Main : CliktCommand(name = "zpa-cli") {
         val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
         progressReport.start(files.map { it.pathRelativeToBase }.toList())
 
-        val scanner = AstScanner(checks.all(), metadata, true, StandardCharsets.UTF_8)
+        val scanner = AstScanner(checkList, metadata, true, StandardCharsets.UTF_8)
 
         val issues = files.parallelStream().flatMap { file ->
             val scannerResult = scanner.scanFile(file)
@@ -107,11 +120,11 @@ class Main : CliktCommand(name = "zpa-cli") {
             val generatedOutput =
                 when (outputFormat) {
                     GENERIC_ISSUE_FORMAT -> {
-                        exportToGenericIssueFormat(repository, checks, issues)
+                        exportToGenericIssueFormat(issues)
                     }
                     SONAR_REPORT_FORMAT -> {
                         sonarqubeLoader?.let {
-                            val issuesToExport = it.updateIssues(repository, checks, activeRules, issues)
+                            val issuesToExport = it.updateIssues(activeRules, issues)
                             val gson = Gson()
                             gson.toJson(issuesToExport)
                         }.orEmpty()
@@ -137,7 +150,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                 val startLine = issue.primaryLocation.startLine()
                 val startColumn = issue.primaryLocation.startLineOffset()
                 val activeRule = issue.check.activeRule
-                var severity = activeRule.severity
+                val severity = activeRule.severity
 
                 var positionFormatted = "$startLine"
                 if (startColumn != -1) {
@@ -150,11 +163,7 @@ class Main : CliktCommand(name = "zpa-cli") {
         }
     }
 
-    private fun exportToGenericIssueFormat(
-        repository: Repository,
-        checks: ZpaChecks,
-        issues: List<ZpaIssue>
-    ): String {
+    private fun exportToGenericIssueFormat(issues: List<ZpaIssue>): String {
         val genericIssues = mutableListOf<GenericIssue>()
         for (issue in issues) {
             val relativeFilePathStr = (issue.file as InputFile).pathRelativeToBase
@@ -185,22 +194,20 @@ class Main : CliktCommand(name = "zpa-cli") {
                 )
             }
 
-            val ruleKey = checks.ruleKey(issue.check) as ZpaRuleKey
-            val rule = repository.rule(ruleKey.rule) as ZpaRule
             val activeRule = issue.check.activeRule
 
             val type = when {
-                rule.tags.contains("vulnerability") -> "VULNERABILITY"
-                rule.tags.contains("bug") -> "BUG"
+                activeRule.tags.contains("vulnerability") -> "VULNERABILITY"
+                activeRule.tags.contains("bug") -> "BUG"
                 else -> "CODE_SMELL"
             }
 
             genericIssues += GenericIssue(
-                ruleId = rule.key,
+                ruleId = activeRule.ruleKey.toString(),
                 severity = activeRule.severity,
                 type = type,
                 primaryLocation = primaryLocation,
-                duration = rule.remediationConstant,
+                duration = activeRule.remediationConstant,
                 secondaryLocations = secondaryLocations
             )
         }

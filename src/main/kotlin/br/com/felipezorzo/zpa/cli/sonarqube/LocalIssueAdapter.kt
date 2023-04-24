@@ -2,10 +2,9 @@ package br.com.felipezorzo.zpa.cli.sonarqube
 
 import br.com.felipezorzo.zpa.cli.InputFile
 import br.com.felipezorzo.zpa.cli.tracker.Trackable
-import org.sonar.plsqlopen.rules.ZpaRule
 import org.sonar.plsqlopen.squid.ZpaIssue
 
-class LocalIssueAdapter(override val ruleKey: String, private val rule: ZpaRule, private val localIssue: ZpaIssue) : Trackable {
+class LocalIssueAdapter(override val ruleKey: String, private val localIssue: ZpaIssue) : Trackable {
     override val message: String
         get() = localIssue.primaryLocation.message()
     override val line: Int
