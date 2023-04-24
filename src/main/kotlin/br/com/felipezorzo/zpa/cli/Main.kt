@@ -1,5 +1,6 @@
 package br.com.felipezorzo.zpa.cli
 
+import br.com.felipezorzo.zpa.cli.plugin.PluginManager
 import br.com.felipezorzo.zpa.cli.sonarqube.SonarQubeLoader
 import br.com.felipezorzo.zpa.cli.sqissue.GenericIssueData
 import br.com.felipezorzo.zpa.cli.sqissue.PrimaryLocation
@@ -24,6 +25,7 @@ import org.sonar.plsqlopen.squid.AstScanner
 import org.sonar.plsqlopen.squid.ProgressReport
 import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plsqlopen.utils.log.Loggers
+import org.sonar.plugins.plsqlopen.api.CustomPlSqlRulesDefinition
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
@@ -57,6 +59,15 @@ class Main : CliktCommand(name = "zpa-cli") {
             LogManager.getLogManager().readConfiguration(it)
         }
 
+        val pluginManager = PluginManager()
+        pluginManager.loadPlugins()
+        pluginManager.startPlugins()
+
+        // print loaded plugins
+        for (plugin in pluginManager.startedPlugins) {
+            LOG.info("Plugin '${plugin.descriptor.pluginId}@${plugin.descriptor.version}' loaded")
+        }
+
         val extensions = extensions.split(',')
 
         val stopwatch = Stopwatch.createStarted()
@@ -78,7 +89,8 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val checkList = mutableListOf<PlSqlVisitor>()
 
-        val rulesDefinitions= listOf(DefaultRulesDefinition())
+        val rulesDefinitions= listOf(DefaultRulesDefinition(),
+            *pluginManager.getExtensions(CustomPlSqlRulesDefinition::class.java).toTypedArray())
 
         for (rulesDefinition in rulesDefinitions) {
             val repository = Repository(rulesDefinition.repositoryKey())
@@ -140,6 +152,8 @@ class Main : CliktCommand(name = "zpa-cli") {
         }
 
         LOG.info("Time elapsed: ${stopwatch.elapsed().toMillis()} ms")
+        pluginManager.stopPlugins()
+        pluginManager.unloadPlugins()
     }
 
     private fun printIssues(issues: List<ZpaIssue>) {
