@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import org.jreleaser.model.api.common.ArchiveOptions
 
 group = "com.felipebz.zpa"
 version = "2.0.0-SNAPSHOT"
@@ -7,8 +8,8 @@ plugins {
     `maven-publish`
     kotlin("jvm") version "1.8.20"
     application
-    id("org.jreleaser") version "1.4.0"
-    id("org.jreleaser.jdks") version "1.4.0"
+    id("org.jreleaser") version "1.6.0"
+    id("org.jreleaser.jdks") version "1.6.0"
 }
 
 java {
@@ -181,6 +182,9 @@ jreleaser {
                         path.set(file("build/jdks/${it.platform}_${it.arch}/jdk-$jdkBuild$additionalDir"))
                         platform.set("$jreleaserOs-$jreleaseArch")
                         extraProperties.put("archiveFormat", if (jreleaserOs == "windows") "ZIP" else "TAR_GZ")
+                        options {
+                            longFileMode.set(ArchiveOptions.TarMode.POSIX)
+                        }
                     }
                 }
                 jdk {
