@@ -63,3 +63,11 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.TAG }}
+
+      - if: github.ref == 'refs/heads/main'
+        name: Release artifacts
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: jreleaserFullRelease
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
