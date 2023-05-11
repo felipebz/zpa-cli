@@ -88,7 +88,7 @@ publishing {
 data class Jdk(val arch: String, val os: String, val extension: String, val checksum: String, val platform: String = os)
 
 val baseJdkUrl = "https://github.com/adoptium/temurin17-binaries/releases/download"
-val jdkBuild = "17.0.5+8"
+val jdkBuild = "17.0.7+7"
 val jdkVersion = jdkBuild.split(".").first()
 val jdkBuildFilename = jdkBuild.replace("+", "_")
 val jdksToBuild = listOf(
@@ -96,21 +96,21 @@ val jdksToBuild = listOf(
         arch = "x64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "482180725ceca472e12a8e6d1a4af23d608d78287a77d963335e2a0156a020af"
+        checksum = "e9458b38e97358850902c2936a1bb5f35f6cffc59da9fcd28c63eab8dbbfbc3b"
     ),
 
     Jdk(
         arch = "aarch64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "1c26c0e09f1641a666d6740d802beb81e12180abaea07b47c409d30c7f368109"
+        checksum = "0084272404b89442871e0a1f112779844090532978ad4d4191b8d03fc6adfade"
     ),
 
     Jdk(
         arch = "x64",
         os = "mac",
         extension = "tar.gz",
-        checksum = "94fe50982b09a179e603a096e83fd8e59fd12c0ae4bcb37ae35f00ef30a75d64",
+        checksum = "50d0e9840113c93916418068ba6c845f1a72ed0dab80a8a1f7977b0e658b65fb",
         platform = "osx"
     ),
 
@@ -118,7 +118,7 @@ val jdksToBuild = listOf(
         arch = "aarch64",
         os = "mac",
         extension = "tar.gz",
-        checksum = "2dc3e425b52d1cd2915d93af5e468596b9e6a90112056abdcebac8b65bf57049",
+        checksum = "1d6aeb55b47341e8ec33cc1644d58b88dfdcce17aa003a858baa7460550e6ff9",
         platform = "osx"
     ),
 
@@ -126,14 +126,14 @@ val jdksToBuild = listOf(
         arch = "x64",
         os = "windows",
         extension = "zip",
-        checksum = "3cdcd859c8421a0681e260dc4fbf46b37fb1211f47beb2326a00398ecc52fde0"
+        checksum = "daab0bac6681e8dbf7bce071c2d6b1b6feaf7479897871a705d10f5f0873d299"
     ),
 
     Jdk(
         arch = "x64",
         os = "alpine-linux",
         extension = "tar.gz",
-        checksum = "cb154396ff3bfb6a9082e3640c564643d31ecae1792fab0956149ed5258ad84b",
+        checksum = "b6edac2fa669876ef16b4895b36b61d01066626e7a69feba2acc19760c8d18cb",
         platform = "linux_musl"
     ),
 )
