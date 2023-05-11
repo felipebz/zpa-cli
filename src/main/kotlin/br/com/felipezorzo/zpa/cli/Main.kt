@@ -13,7 +13,6 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.choice
-import com.google.common.base.Stopwatch
 import com.google.gson.Gson
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
 import org.sonar.plsqlopen.metadata.FormsMetadata
@@ -34,6 +33,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import java.util.stream.Collectors
+import kotlin.system.measureTimeMillis
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
 const val CONSOLE = "console"
@@ -70,88 +70,95 @@ class Main : CliktCommand(name = "zpa-cli") {
 
         val extensions = extensions.split(',')
 
-        val stopwatch = Stopwatch.createStarted()
+        val ellapsedTime = measureTimeMillis {
 
-        val baseDir = File(sources).absoluteFile
-        val baseDirPath = baseDir.toPath()
+            val baseDir = File(sources).absoluteFile
+            val baseDirPath = baseDir.toPath()
 
-        var sonarqubeLoader: SonarQubeLoader? = null
-        sonarqubeOptions?.let {
-            if (it.sonarqubeUrl.isNotEmpty()) {
-                sonarqubeLoader = SonarQubeLoader(it)
+            var sonarqubeLoader: SonarQubeLoader? = null
+            sonarqubeOptions?.let {
+                if (it.sonarqubeUrl.isNotEmpty()) {
+                    sonarqubeLoader = SonarQubeLoader(it)
+                }
             }
-        }
 
-        val activeRulesOnSonarQube = sonarqubeLoader?.downloadQualityProfile() ?: emptyList()
-        val activeRules = ActiveRules().configureRules(activeRulesOnSonarQube)
+            val activeRulesOnSonarQube = sonarqubeLoader?.downloadQualityProfile() ?: emptyList()
+            val activeRules = ActiveRules().configureRules(activeRulesOnSonarQube)
 
-        val ruleMetadataLoader = RuleMetadataLoader()
+            val ruleMetadataLoader = RuleMetadataLoader()
 
-        val checkList = mutableListOf<PlSqlVisitor>()
+            val checkList = mutableListOf<PlSqlVisitor>()
 
-        val rulesDefinitions= listOf(DefaultRulesDefinition(),
-            *pluginManager.getExtensions(CustomPlSqlRulesDefinition::class.java).toTypedArray())
+            val rulesDefinitions = listOf(
+                DefaultRulesDefinition(),
+                *pluginManager.getExtensions(CustomPlSqlRulesDefinition::class.java).toTypedArray()
+            )
 
-        for (rulesDefinition in rulesDefinitions) {
-            val repository = Repository(rulesDefinition.repositoryKey())
-            CustomAnnotationBasedRulesDefinition.load(repository, "plsqlopen",
-                rulesDefinition.checkClasses().toList(), ruleMetadataLoader)
+            for (rulesDefinition in rulesDefinitions) {
+                val repository = Repository(rulesDefinition.repositoryKey())
+                CustomAnnotationBasedRulesDefinition.load(
+                    repository, "plsqlopen",
+                    rulesDefinition.checkClasses().toList(), ruleMetadataLoader
+                )
 
-            activeRules.addRepository(repository)
+                activeRules.addRepository(repository)
 
-            val checks = ZpaChecks(activeRules, repository.key, ruleMetadataLoader)
-                .addAnnotatedChecks(rulesDefinition.checkClasses().toList())
+                val checks = ZpaChecks(activeRules, repository.key, ruleMetadataLoader)
+                    .addAnnotatedChecks(rulesDefinition.checkClasses().toList())
 
-            checkList.addAll(checks.all())
-        }
+                checkList.addAll(checks.all())
+            }
 
-        val files = baseDir
+            val files = baseDir
                 .walkTopDown()
                 .filter { it.isFile && extensions.contains(it.extension.lowercase(Locale.getDefault())) }
                 .map { InputFile(PlSqlFile.Type.MAIN, baseDirPath, it, StandardCharsets.UTF_8) }
                 .toList()
 
-        val metadata = FormsMetadata.loadFromFile(formsMetadata)
+            val metadata = FormsMetadata.loadFromFile(formsMetadata)
 
-        val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
-        progressReport.start(files.map { it.pathRelativeToBase }.toList())
+            val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
+            progressReport.start(files.map { it.pathRelativeToBase }.toList())
 
-        val scanner = AstScanner(checkList, metadata, true, StandardCharsets.UTF_8)
+            val scanner = AstScanner(checkList, metadata, true, StandardCharsets.UTF_8)
 
-        val issues = files.parallelStream().flatMap { file ->
-            val scannerResult = scanner.scanFile(file)
-            progressReport.nextFile()
-            scannerResult.issues.stream()
-        }.collect(Collectors.toList())
+            val issues = files.parallelStream().flatMap { file ->
+                val scannerResult = scanner.scanFile(file)
+                progressReport.nextFile()
+                scannerResult.issues.stream()
+            }.collect(Collectors.toList())
 
-        progressReport.stop()
+            progressReport.stop()
 
-        if (outputFormat == CONSOLE) {
-            printIssues(issues)
-        } else {
-            val generatedOutput =
-                when (outputFormat) {
-                    GENERIC_ISSUE_FORMAT -> {
-                        exportToGenericIssueFormat(issues)
+            if (outputFormat == CONSOLE) {
+                printIssues(issues)
+            } else {
+                val generatedOutput =
+                    when (outputFormat) {
+                        GENERIC_ISSUE_FORMAT -> {
+                            exportToGenericIssueFormat(issues)
+                        }
+
+                        SONAR_REPORT_FORMAT -> {
+                            sonarqubeLoader?.let {
+                                val issuesToExport = it.updateIssues(activeRules, issues)
+                                val gson = Gson()
+                                gson.toJson(issuesToExport)
+                            }.orEmpty()
+                        }
+
+                        else -> {
+                            ""
+                        }
                     }
-                    SONAR_REPORT_FORMAT -> {
-                        sonarqubeLoader?.let {
-                            val issuesToExport = it.updateIssues(activeRules, issues)
-                            val gson = Gson()
-                            gson.toJson(issuesToExport)
-                        }.orEmpty()
-                    }
-                    else -> {
-                        ""
-                    }
-                }
 
-            val file = File(outputFile)
-            file.parentFile?.mkdirs()
-            file.writeText(generatedOutput)
+                val file = File(outputFile)
+                file.parentFile?.mkdirs()
+                file.writeText(generatedOutput)
+            }
         }
 
-        LOG.info("Time elapsed: ${stopwatch.elapsed().toMillis()} ms")
+        LOG.info("Time elapsed: $ellapsedTime ms")
         pluginManager.stopPlugins()
         pluginManager.unloadPlugins()
     }
