@@ -17,8 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          submodules: true
 
       - uses: actions/setup-java@v3
         with:
@@ -51,12 +49,6 @@ jobs:
           load: true
           tags: ${{ env.TAG }}
 
-      - name: Analyze demo project on SonarCloud
-        run: ./source-test/run-sonar-scanner.sh
-        env:
-          SONARCLOUD_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
-          SONARCLOUD_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
-
       - if: github.ref == 'refs/heads/main'
         name: Push docker image to Docker Hub
         uses: docker/build-push-action@v4
@@ -73,3 +65,38 @@ jobs:
           arguments: jreleaserFullRelease
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  demo:
+    name: Analyze demo project on SonarCloud
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: utPLSQL/utPLSQL
+
+      - name: Analyze with zpa-cli
+        run: |
+          docker run --rm \
+            -v $PWD:/src \
+            felipebz/zpa-cli:nightly \
+            --sources . \
+            --output-file zpa-issues.json \
+            --output-format sq-generic-issue-import
+
+      - name: Analyze with SonarCloud
+        uses: sonarsource/sonarcloud-github-action@master
+        with:
+          args: >
+            -Dsonar.projectKey=utPLSQL-zpa-demo
+            -Dsonar.organization=felipebz-github
+            -Dsonar.externalIssuesReportPaths=zpa-issues.json
+            -Dsonar.pullrequest.provider=
+            -Dsonar.coverageReportPaths=
+            -Dsonar.testExecutionReportPaths=
+            -Dsonar.plsql.file.suffixes=sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps
+            -Dsonar.scm.disabled=true
+            -Dsonar.tests=
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
