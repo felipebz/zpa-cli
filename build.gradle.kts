@@ -6,10 +6,10 @@ version = "2.0.0-SNAPSHOT"
 
 plugins {
     `maven-publish`
-    kotlin("jvm") version "1.8.20"
+    kotlin("jvm") version "1.9.0"
     application
-    id("org.jreleaser") version "1.6.0"
-    id("org.jreleaser.jdks") version "1.6.0"
+    id("org.jreleaser") version "1.7.0"
+    id("org.jreleaser.jdks") version "1.7.0"
 }
 
 java {
