@@ -1,6 +1,5 @@
 package br.com.felipezorzo.zpa.cli
 
-import org.apache.commons.codec.digest.DigestUtils
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
 import java.io.File
 import java.nio.charset.Charset
@@ -23,16 +22,6 @@ class InputFile(private val type: PlSqlFile.Type,
     override fun type(): PlSqlFile.Type = type
 
     override fun path(): Path = file.toPath()
-
-    private val lineHashes: Array<String> by lazy {
-        contents().lineSequence().map {
-            DigestUtils.md5Hex(it.replace("\\s".toRegex(), ""))
-        }.toList().toTypedArray()
-    }
-
-    fun getLineHash(line: Int): String {
-        return lineHashes[line - 1]
-    }
 
     val pathRelativeToBase: String = baseDirPath.relativize(Paths.get(file.absolutePath)).invariantSeparatorsPathString
 

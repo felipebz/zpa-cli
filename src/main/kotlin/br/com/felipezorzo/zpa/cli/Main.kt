@@ -1,14 +1,11 @@
 package br.com.felipezorzo.zpa.cli
 
 import br.com.felipezorzo.zpa.cli.plugin.PluginManager
-import br.com.felipezorzo.zpa.cli.sonarqube.SonarQubeLoader
 import br.com.felipezorzo.zpa.cli.sqissue.GenericIssueData
 import br.com.felipezorzo.zpa.cli.sqissue.PrimaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.SecondaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.TextRange
 import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.parameters.groups.OptionGroup
-import com.github.ajalt.clikt.parameters.groups.cooccurring
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
@@ -38,21 +35,13 @@ import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
 const val CONSOLE = "console"
 const val GENERIC_ISSUE_FORMAT = "sq-generic-issue-import"
-const val SONAR_REPORT_FORMAT = "sq-issue-report"
-
-class SonarQubeOptions : OptionGroup() {
-    val sonarqubeUrl by option(help = "SonarQube server URL").required()
-    val sonarqubeToken by option(help = "The authentication token of a SonarQube user with Execute Analysis permission on the project.").default("")
-    val sonarqubeKey by option(help = "The project's unique key on the SonarQube Server.").default("")
-}
 
 class Main : CliktCommand(name = "zpa-cli") {
     private val sources by option(help = "Folder with files").required()
     private val formsMetadata by option(help = "Oracle Forms metadata file").default("")
     private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps")
-    private val outputFormat by option(help = "Format of the output file").choice(CONSOLE, GENERIC_ISSUE_FORMAT, SONAR_REPORT_FORMAT).default(CONSOLE)
+    private val outputFormat by option(help = "Format of the output file").choice(CONSOLE, GENERIC_ISSUE_FORMAT).default(CONSOLE)
     private val outputFile by option(help = "Output filename").default("")
-    private val sonarqubeOptions by SonarQubeOptions().cooccurring()
 
     override fun run() {
         javaClass.getResourceAsStream("/logging.properties").use {
@@ -75,15 +64,8 @@ class Main : CliktCommand(name = "zpa-cli") {
             val baseDir = File(sources).absoluteFile
             val baseDirPath = baseDir.toPath()
 
-            var sonarqubeLoader: SonarQubeLoader? = null
-            sonarqubeOptions?.let {
-                if (it.sonarqubeUrl.isNotEmpty()) {
-                    sonarqubeLoader = SonarQubeLoader(it)
-                }
-            }
-
-            val activeRulesOnSonarQube = sonarqubeLoader?.downloadQualityProfile() ?: emptyList()
-            val activeRules = ActiveRules().configureRules(activeRulesOnSonarQube)
+            val activeRules = ActiveRules()
+            // TODO: read the configuration from a file and call activeRules.configureRules with the list of rules
 
             val ruleMetadataLoader = RuleMetadataLoader()
 
@@ -138,15 +120,6 @@ class Main : CliktCommand(name = "zpa-cli") {
                         GENERIC_ISSUE_FORMAT -> {
                             exportToGenericIssueFormat(issues)
                         }
-
-                        SONAR_REPORT_FORMAT -> {
-                            sonarqubeLoader?.let {
-                                val issuesToExport = it.updateIssues(activeRules, issues)
-                                val gson = Gson()
-                                gson.toJson(issuesToExport)
-                            }.orEmpty()
-                        }
-
                         else -> {
                             ""
                         }

@@ -33,13 +33,9 @@ repositories {
 }
 
 dependencies {
+    implementation("org.sonarsource.api.plugin:sonar-plugin-api:9.14.0.375")
     implementation("com.github.ajalt.clikt:clikt:3.5.0")
     implementation("com.felipebz.zpa:sonar-zpa-plugin:3.3.0-SNAPSHOT")
-    implementation("org.sonarsource.sonarqube:sonar-scanner-protocol:7.9")
-    implementation("org.sonarsource.sonarqube:sonar-ws:7.9")
-    implementation("com.squareup.okhttp3:okhttp:4.10.0")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0")
     implementation("org.pf4j:pf4j:3.9.0")
     implementation("org.slf4j:slf4j-jdk14:2.0.7")
     testImplementation(kotlin("test"))
