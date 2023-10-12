@@ -8,8 +8,8 @@ plugins {
     `maven-publish`
     kotlin("jvm") version "1.9.0"
     application
-    id("org.jreleaser") version "1.7.0"
-    id("org.jreleaser.jdks") version "1.7.0"
+    id("org.jreleaser") version "1.8.0"
+    id("org.jreleaser.jdks") version "1.8.0"
 }
 
 java {
