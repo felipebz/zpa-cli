@@ -82,30 +82,30 @@ publishing {
 
 data class Jdk(val arch: String, val os: String, val extension: String, val checksum: String, val platform: String = os)
 
-val baseJdkUrl = "https://github.com/adoptium/temurin17-binaries/releases/download"
-val jdkBuild = "17.0.8.1+1"
-val jdkVersion = jdkBuild.split(".").first()
-val jdkBuildFilename = jdkBuild.replace("+", "_")
+val baseJdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download"
+val jdkBuild = "21+35"
+val jdkVersion = jdkBuild.split('.', '+').first()
+val jdkBuildFilename = jdkBuild.replace('+', '_')
 val jdksToBuild = listOf(
     Jdk(
         arch = "x64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "c25dfbc334068a48c19c44ce39ad4b8427e309ae1cfa83f23c102e78b8a6dcc0"
+        checksum = "82f64c53acaa045370d6762ebd7441b74e6fda14b464d54d1ff8ca941ec069e6"
     ),
 
     Jdk(
         arch = "aarch64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "eefd3cf3b3dd47ff269fa5b5c10b5e096b163f4e9c1810023abdbc00dc6cc304"
+        checksum = "33e440c237438aa2e3866d84ead8d4e00dc0992d98d9fd0ee2fe48192f2dbc4b"
     ),
 
     Jdk(
         arch = "x64",
         os = "mac",
         extension = "tar.gz",
-        checksum = "18be56732c1692ef131625d814dcb02ee091a43fdd6f214a33d87cc14842fc3f",
+        checksum = "25f3d8c875255362a3e31a0783f9f0422de01f8e4b515c45bd68e43ef3812a9d",
         platform = "osx"
     ),
 
@@ -113,7 +113,7 @@ val jdksToBuild = listOf(
         arch = "aarch64",
         os = "mac",
         extension = "tar.gz",
-        checksum = "2e95eed48650f00650e963c8213b6c6ecda54458edf8d254ebc99d6a6966ffad",
+        checksum = "107d1b16cda1da20d2f7aa45b1bfb8574bbfca2e15bb0ff720ce2678473b00d5",
         platform = "osx"
     ),
 
@@ -121,14 +121,14 @@ val jdksToBuild = listOf(
         arch = "x64",
         os = "windows",
         extension = "zip",
-        checksum = "651a795155dc918c06cc9fd4b37253b9cbbca5ec8e76d4a8fa7cdaeb1f52761c"
+        checksum = "653dc46f31dd0e8c5c13dfefe72754615dc0fdc123a03390e71e2cff2f1f17e1"
     ),
 
     Jdk(
         arch = "x64",
         os = "alpine-linux",
         extension = "tar.gz",
-        checksum = "85d298268db61c4a538df905ec510eba7dc09300e7f7132bb2e25e5e8aef1933",
+        checksum = "4fd74f93f0b1a94d8471e0ed801fe9d938f7471f6efe8791880c85e7716c943f",
         platform = "linux_musl"
     ),
 )
@@ -184,7 +184,7 @@ jreleaser {
                 }
                 jdk {
                     val jdkPath = javaToolchains.launcherFor {
-                        languageVersion.set(JavaLanguageVersion.of(17))
+                        languageVersion.set(JavaLanguageVersion.of(21))
                     }.get().metadata.installationPath
 
                     path.set(file(jdkPath))
