@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jreleaser.model.api.common.ArchiveOptions
 
 group = "com.felipebz.zpa"
@@ -6,7 +6,7 @@ version = "2.0.0-SNAPSHOT"
 
 plugins {
     `maven-publish`
-    kotlin("jvm") version "1.9.24"
+    kotlin("jvm") version "2.0.0"
     application
     id("org.jreleaser") version "1.8.0"
     id("org.jreleaser.jdks") version "1.8.0"
