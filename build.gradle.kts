@@ -83,7 +83,7 @@ publishing {
 data class Jdk(val arch: String, val os: String, val extension: String, val checksum: String, val platform: String = os)
 
 val baseJdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download"
-val jdkBuild = "21+35"
+val jdkBuild = "21.0.3+9"
 val jdkVersion = jdkBuild.split('.', '+').first()
 val jdkBuildFilename = jdkBuild.replace('+', '_')
 val jdksToBuild = listOf(
@@ -91,21 +91,21 @@ val jdksToBuild = listOf(
         arch = "x64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "82f64c53acaa045370d6762ebd7441b74e6fda14b464d54d1ff8ca941ec069e6"
+        checksum = "fffa52c22d797b715a962e6c8d11ec7d79b90dd819b5bc51d62137ea4b22a340"
     ),
 
     Jdk(
         arch = "aarch64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "33e440c237438aa2e3866d84ead8d4e00dc0992d98d9fd0ee2fe48192f2dbc4b"
+        checksum = "7d3ab0e8eba95bd682cfda8041c6cb6fa21e09d0d9131316fd7c96c78969de31"
     ),
 
     Jdk(
         arch = "x64",
         os = "mac",
         extension = "tar.gz",
-        checksum = "25f3d8c875255362a3e31a0783f9f0422de01f8e4b515c45bd68e43ef3812a9d",
+        checksum = "f777103aab94330d14a29bd99f3a26d60abbab8e2c375cec9602746096721a7c",
         platform = "osx"
     ),
 
@@ -113,7 +113,7 @@ val jdksToBuild = listOf(
         arch = "aarch64",
         os = "mac",
         extension = "tar.gz",
-        checksum = "107d1b16cda1da20d2f7aa45b1bfb8574bbfca2e15bb0ff720ce2678473b00d5",
+        checksum = "b6be6a9568be83695ec6b7cb977f4902f7be47d74494c290bc2a5c3c951e254f",
         platform = "osx"
     ),
 
@@ -121,14 +121,14 @@ val jdksToBuild = listOf(
         arch = "x64",
         os = "windows",
         extension = "zip",
-        checksum = "653dc46f31dd0e8c5c13dfefe72754615dc0fdc123a03390e71e2cff2f1f17e1"
+        checksum = "c43a66cff7a403d56c5c5e1ff10d3d5f95961abf80f97f0e35380594909f0e4d"
     ),
 
     Jdk(
         arch = "x64",
         os = "alpine-linux",
         extension = "tar.gz",
-        checksum = "4fd74f93f0b1a94d8471e0ed801fe9d938f7471f6efe8791880c85e7716c943f",
+        checksum = "8e861638bf6b08c6d5837de6dc929930550928ec5fcc81b9fa7e8296afd0f9c0",
         platform = "linux_musl"
     ),
 )
