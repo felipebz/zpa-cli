@@ -47,7 +47,7 @@ application {
 
 val copyDependencies = tasks.create<Sync>("copyDependencies") {
     from(configurations.runtimeClasspath)
-    into("${layout.buildDirectory}/dependencies/flat")
+    into(layout.buildDirectory.dir("dependencies/flat"))
 }
 tasks["assemble"].dependsOn(copyDependencies)
 
