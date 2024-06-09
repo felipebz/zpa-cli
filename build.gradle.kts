@@ -35,9 +35,10 @@ repositories {
 dependencies {
     implementation("org.sonarsource.api.plugin:sonar-plugin-api:9.14.0.375")
     implementation("com.github.ajalt.clikt:clikt:3.5.0")
-    implementation("com.felipebz.zpa:sonar-zpa-plugin:3.3.0-SNAPSHOT")
-    implementation("org.pf4j:pf4j:3.11.0")
-    implementation("org.slf4j:slf4j-jdk14:2.0.7")
+    implementation("com.felipebz.zpa:sonar-zpa-plugin:3.5.0-SNAPSHOT")
+    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("org.pf4j:pf4j:3.11.1")
+    implementation("org.slf4j:slf4j-jdk14:2.0.13")
     testImplementation(kotlin("test"))
 }
 
