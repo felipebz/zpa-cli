@@ -5,11 +5,8 @@ import br.com.felipezorzo.zpa.cli.sqissue.GenericIssueData
 import br.com.felipezorzo.zpa.cli.sqissue.PrimaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.SecondaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.TextRange
-import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.required
-import com.github.ajalt.clikt.parameters.types.choice
+import com.beust.jcommander.JCommander
+import com.beust.jcommander.ParameterException
 import com.google.gson.Gson
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
 import org.sonar.plsqlopen.metadata.FormsMetadata
@@ -36,14 +33,9 @@ import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 const val CONSOLE = "console"
 const val GENERIC_ISSUE_FORMAT = "sq-generic-issue-import"
 
-class Main : CliktCommand(name = "zpa-cli") {
-    private val sources by option(help = "Folder with files").required()
-    private val formsMetadata by option(help = "Oracle Forms metadata file").default("")
-    private val extensions by option(help = "Extensions to analyze").default("sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps")
-    private val outputFormat by option(help = "Format of the output file").choice(CONSOLE, GENERIC_ISSUE_FORMAT).default(CONSOLE)
-    private val outputFile by option(help = "Output filename").default("")
+class Main(private val args: Arguments) {
 
-    override fun run() {
+    fun run() {
         javaClass.getResourceAsStream("/logging.properties").use {
             LogManager.getLogManager().readConfiguration(it)
         }
@@ -57,11 +49,11 @@ class Main : CliktCommand(name = "zpa-cli") {
             LOG.info("Plugin '${plugin.descriptor.pluginId}@${plugin.descriptor.version}' loaded")
         }
 
-        val extensions = extensions.split(',')
+        val extensions = args.extensions.split(',')
 
         val ellapsedTime = measureTimeMillis {
 
-            val baseDir = File(sources).absoluteFile
+            val baseDir = File(args.sources).absoluteFile
             val baseDirPath = baseDir.toPath()
 
             val activeRules = ActiveRules()
@@ -97,7 +89,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                 .map { InputFile(PlSqlFile.Type.MAIN, baseDirPath, it, StandardCharsets.UTF_8) }
                 .toList()
 
-            val metadata = FormsMetadata.loadFromFile(formsMetadata)
+            val metadata = FormsMetadata.loadFromFile(args.formsMetadata)
 
             val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
             progressReport.start(files.map { it.pathRelativeToBase }.toList())
@@ -112,11 +104,11 @@ class Main : CliktCommand(name = "zpa-cli") {
 
             progressReport.stop()
 
-            if (outputFormat == CONSOLE) {
+            if (args.outputFormat == CONSOLE) {
                 printIssues(issues)
             } else {
                 val generatedOutput =
-                    when (outputFormat) {
+                    when (args.outputFormat) {
                         GENERIC_ISSUE_FORMAT -> {
                             exportToGenericIssueFormat(issues)
                         }
@@ -125,7 +117,7 @@ class Main : CliktCommand(name = "zpa-cli") {
                         }
                     }
 
-                val file = File(outputFile)
+                val file = File(args.outputFile)
                 file.parentFile?.mkdirs()
                 file.writeText(generatedOutput)
             }
@@ -224,4 +216,17 @@ class Main : CliktCommand(name = "zpa-cli") {
     }
 }
 
-fun main(args: Array<String>) = Main().main(args)
+fun main(args: Array<String>) {
+    val arguments = Arguments()
+    val cmd = JCommander.newBuilder()
+        .addObject(arguments)
+        .programName("map-generator")
+        .build()
+    try {
+        cmd.parse(*args)
+        Main(arguments).run()
+    } catch (exception: ParameterException) {
+        println(exception.message)
+        cmd.usage()
+    }
+}
