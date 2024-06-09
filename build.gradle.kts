@@ -160,7 +160,7 @@ jreleaser {
                 exported.set(true)
                 stereotype.set(org.jreleaser.model.Stereotype.CLI)
                 imageName.set("{{distributionName}}-{{projectVersion}}")
-                moduleNames.set(listOf("java.logging", "java.xml", "java.sql"))
+                moduleNames.set(listOf("java.logging", "java.xml"))
                 jdeps {
                     multiRelease.set("base")
                     ignoreMissingDeps.set(true)
