@@ -1,7 +1,7 @@
 FROM eclipse-temurin:21.0.3_9-jdk-alpine AS jre-build
 
 RUN "$JAVA_HOME"/bin/jlink \
-         --add-modules java.logging,java.xml,java.sql \
+         --add-modules java.logging,java.xml \
          --strip-debug \
          --no-man-pages \
          --no-header-files \
