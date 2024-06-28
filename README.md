@@ -10,7 +10,7 @@ Official releases are available for download on the ["Releases" page](https://gi
 
 ## Requirements
 
-* Java 11 or newer
+* Java 17 or newer
 
 ## Usage
 
