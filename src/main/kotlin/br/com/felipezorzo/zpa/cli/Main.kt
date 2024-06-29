@@ -44,7 +44,7 @@ class Main(private val args: Arguments) {
             LogManager.getLogManager().readConfiguration(it)
         }
 
-        val codePath = Path.of(Main::class.java.protectionDomain.codeSource.location.path)
+        val codePath = Path.of(Main::class.java.protectionDomain.codeSource.location.toURI())
         val appHome = if (codePath.extension == "jar" && (codePath.parent.name == "lib" || codePath.parent.name == "jars")) {
             codePath.parent.parent.absolute()
         } else {
