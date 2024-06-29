@@ -23,10 +23,14 @@ import org.sonar.plugins.plsqlopen.api.PlSqlFile
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import java.util.stream.Collectors
+import kotlin.io.path.absolute
+import kotlin.io.path.extension
+import kotlin.io.path.name
 import kotlin.system.measureTimeMillis
 import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
@@ -40,7 +44,14 @@ class Main(private val args: Arguments) {
             LogManager.getLogManager().readConfiguration(it)
         }
 
-        val pluginManager = PluginManager()
+        val codePath = Path.of(Main::class.java.protectionDomain.codeSource.location.path)
+        val appHome = if (codePath.extension == "jar" && (codePath.parent.name == "lib" || codePath.parent.name == "jars")) {
+            codePath.parent.parent.absolute()
+        } else {
+            Path.of(".")
+        }
+
+        val pluginManager = PluginManager(appHome.resolve("plugins"))
         pluginManager.loadPlugins()
         pluginManager.startPlugins()
 

@@ -46,12 +46,6 @@ application {
     mainClass.set("br.com.felipezorzo.zpa.cli.MainKt")
 }
 
-val copyDependencies = tasks.create<Sync>("copyDependencies") {
-    from(configurations.runtimeClasspath)
-    into(layout.buildDirectory.dir("dependencies/flat"))
-}
-tasks["assemble"].dependsOn(copyDependencies)
-
 publishing {
     repositories {
         maven {
@@ -190,11 +184,13 @@ jreleaser {
 
                     path.set(file(jdkPath))
                 }
-                mainJar {
-                    path.set(file("build/libs/zpa-cli-{{projectVersion}}.jar"))
+                javaArchive {
+                    path = "build/distributions/zpa-cli-{{projectVersion}}.tar"
                 }
-                jars {
-                    pattern.set("build/dependencies/flat/*.jar")
+                fileSet {
+                    input = "src/dist/plugins"
+                    output = "plugins"
+                    includes = listOf("*")
                 }
             }
         }
