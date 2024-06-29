@@ -2,6 +2,14 @@
 
 {{changelogChanges}}
 
+## Highlights
+
+### Support for custom plugins
+
+ZPA CLI now supports the same custom plugins as the ZPA Plugin for SonarQube. You can create a plugin by following the [plugin development guide](https://github.com/felipebz/zpa/wiki/Create-a-plugin-with-custom-rules).
+
+To use a custom plugin, simply add the JAR file to the `plugins` directory.
+
 ## Binaries
 
 ### 🌟 Universal
