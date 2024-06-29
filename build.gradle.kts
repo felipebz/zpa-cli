@@ -198,6 +198,7 @@ jreleaser {
     release {
         github {
             overwrite.set(true)
+            tagName.set("{{projectVersion}}")
             changelog {
                 formatted.set(org.jreleaser.model.Active.ALWAYS)
                 preset.set("conventional-commits")
