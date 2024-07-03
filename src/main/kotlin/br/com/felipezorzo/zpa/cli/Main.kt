@@ -7,7 +7,7 @@ import br.com.felipezorzo.zpa.cli.sqissue.SecondaryLocation
 import br.com.felipezorzo.zpa.cli.sqissue.TextRange
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
-import com.google.gson.Gson
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.rules.ActiveRules
@@ -210,8 +210,8 @@ class Main(private val args: Arguments) {
         }
         val genericReport = GenericIssueData(genericIssues)
 
-        val gson = Gson()
-        return gson.toJson(genericReport)
+        val mapper = ObjectMapper()
+        return mapper.writeValueAsString(genericReport)
     }
 
     private fun createTextRange(startLine: Int, endLine: Int, startLineOffset: Int, endLineOffset: Int): TextRange {
