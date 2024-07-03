@@ -35,7 +35,7 @@ repositories {
 dependencies {
     implementation("org.sonarsource.api.plugin:sonar-plugin-api:9.14.0.375")
     implementation("org.jcommander:jcommander:1.83")
-    implementation("com.felipebz.zpa:sonar-zpa-plugin:3.5.1")
+    implementation("com.felipebz.zpa:sonar-zpa-plugin:3.6.0-SNAPSHOT")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")
     implementation("org.pf4j:pf4j:3.11.1")
     implementation("org.slf4j:slf4j-jdk14:2.0.13")
