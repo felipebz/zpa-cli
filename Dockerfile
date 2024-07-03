@@ -9,7 +9,7 @@ RUN "$JAVA_HOME"/bin/jlink \
 
 FROM alpine:3.20
 ENV JAVA_HOME=/opt/java/openjdk
-ENV PATH "${JAVA_HOME}/bin:${PATH}"
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 RUN addgroup -S -g 1001 zpa-cli && adduser -S -D -u 1001 -G zpa-cli zpa-cli
 
