@@ -14,8 +14,8 @@ import org.sonar.plsqlopen.rules.ZpaChecks
 import org.sonar.plsqlopen.squid.AstScanner
 import org.sonar.plsqlopen.squid.ProgressReport
 import org.sonar.plsqlopen.utils.log.Loggers
-import org.sonar.plugins.plsqlopen.api.CustomPlSqlRulesDefinition
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
+import org.sonar.plugins.plsqlopen.api.ZpaRulesDefinition
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -77,7 +77,7 @@ class Main(private val args: Arguments) {
 
             val rulesDefinitions = listOf(
                 DefaultRulesDefinition(),
-                *pluginManager.getExtensions(CustomPlSqlRulesDefinition::class.java).toTypedArray()
+                *pluginManager.getExtensions(ZpaRulesDefinition::class.java).toTypedArray()
             )
 
             for (rulesDefinition in rulesDefinitions) {

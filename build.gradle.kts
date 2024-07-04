@@ -33,7 +33,6 @@ repositories {
 }
 
 dependencies {
-    implementation("org.sonarsource.api.plugin:sonar-plugin-api:9.14.0.375")
     implementation("org.jcommander:jcommander:1.83")
     implementation("com.felipebz.zpa:sonar-zpa-plugin:3.6.0-SNAPSHOT")
     implementation("org.pf4j:pf4j:3.11.1")
