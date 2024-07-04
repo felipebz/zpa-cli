@@ -1,13 +1,10 @@
 package br.com.felipezorzo.zpa.cli
 
+import br.com.felipezorzo.zpa.cli.exporters.ConsoleExporter
+import br.com.felipezorzo.zpa.cli.exporters.GenericIssueFormatExporter
 import br.com.felipezorzo.zpa.cli.plugin.PluginManager
-import br.com.felipezorzo.zpa.cli.sqissue.GenericIssueData
-import br.com.felipezorzo.zpa.cli.sqissue.PrimaryLocation
-import br.com.felipezorzo.zpa.cli.sqissue.SecondaryLocation
-import br.com.felipezorzo.zpa.cli.sqissue.TextRange
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.rules.ActiveRules
@@ -16,7 +13,6 @@ import org.sonar.plsqlopen.rules.RuleMetadataLoader
 import org.sonar.plsqlopen.rules.ZpaChecks
 import org.sonar.plsqlopen.squid.AstScanner
 import org.sonar.plsqlopen.squid.ProgressReport
-import org.sonar.plsqlopen.squid.ZpaIssue
 import org.sonar.plsqlopen.utils.log.Loggers
 import org.sonar.plugins.plsqlopen.api.CustomPlSqlRulesDefinition
 import org.sonar.plugins.plsqlopen.api.PlSqlFile
@@ -32,7 +28,6 @@ import kotlin.io.path.absolute
 import kotlin.io.path.extension
 import kotlin.io.path.name
 import kotlin.system.measureTimeMillis
-import br.com.felipezorzo.zpa.cli.sqissue.Issue as GenericIssue
 
 const val CONSOLE = "console"
 const val GENERIC_ISSUE_FORMAT = "sq-generic-issue-import"
@@ -61,6 +56,12 @@ class Main(private val args: Arguments) {
         }
 
         val extensions = args.extensions.split(',')
+
+        val issueExporter = when (args.outputFormat) {
+            CONSOLE -> ConsoleExporter()
+            GENERIC_ISSUE_FORMAT -> GenericIssueFormatExporter(args.outputFile)
+            else -> throw IllegalArgumentException("Invalid output format")
+        }
 
         val ellapsedTime = measureTimeMillis {
 
@@ -115,111 +116,12 @@ class Main(private val args: Arguments) {
 
             progressReport.stop()
 
-            if (args.outputFormat == CONSOLE) {
-                printIssues(issues)
-            } else {
-                val generatedOutput =
-                    when (args.outputFormat) {
-                        GENERIC_ISSUE_FORMAT -> {
-                            exportToGenericIssueFormat(issues)
-                        }
-                        else -> {
-                            ""
-                        }
-                    }
-
-                val file = File(args.outputFile)
-                file.parentFile?.mkdirs()
-                file.writeText(generatedOutput)
-            }
+            issueExporter.export(issues)
         }
 
         LOG.info("Time elapsed: $ellapsedTime ms")
         pluginManager.stopPlugins()
         pluginManager.unloadPlugins()
-    }
-
-    private fun printIssues(issues: List<ZpaIssue>) {
-        for ((file, fileIssues) in issues.groupBy { (it.file as InputFile).pathRelativeToBase }.toSortedMap()) {
-            println("File: $file")
-
-            for (issue in fileIssues.sortedWith(compareBy({ it.primaryLocation.startLine() }, { it.primaryLocation.startLineOffset() }))) {
-                val startLine = issue.primaryLocation.startLine()
-                val startColumn = issue.primaryLocation.startLineOffset()
-                val activeRule = issue.check.activeRule
-                val severity = activeRule.severity
-
-                var positionFormatted = "$startLine"
-                if (startColumn != -1) {
-                    positionFormatted += ":$startColumn"
-                }
-                println("${positionFormatted.padEnd(10)}${severity.padEnd(10)}${issue.primaryLocation.message()}")
-            }
-
-            println("")
-        }
-    }
-
-    private fun exportToGenericIssueFormat(issues: List<ZpaIssue>): String {
-        val genericIssues = mutableListOf<GenericIssue>()
-        for (issue in issues) {
-            val relativeFilePathStr = (issue.file as InputFile).pathRelativeToBase
-
-            val issuePrimaryLocation = issue.primaryLocation
-
-            val primaryLocation = PrimaryLocation(
-                issuePrimaryLocation.message(),
-                relativeFilePathStr,
-                createTextRange(
-                    issuePrimaryLocation.startLine(),
-                    issuePrimaryLocation.endLine(),
-                    issuePrimaryLocation.startLineOffset(),
-                    issuePrimaryLocation.endLineOffset())
-            )
-
-            val secondaryLocations = mutableListOf<SecondaryLocation>()
-
-            for (secondary in issue.secondaryLocations) {
-                secondaryLocations += SecondaryLocation(
-                    secondary.message(),
-                    relativeFilePathStr,
-                    createTextRange(
-                        secondary.startLine(),
-                        secondary.endLine(),
-                        secondary.startLineOffset(),
-                        secondary.endLineOffset())
-                )
-            }
-
-            val activeRule = issue.check.activeRule
-
-            val type = when {
-                activeRule.tags.contains("vulnerability") -> "VULNERABILITY"
-                activeRule.tags.contains("bug") -> "BUG"
-                else -> "CODE_SMELL"
-            }
-
-            genericIssues += GenericIssue(
-                ruleId = activeRule.ruleKey.toString(),
-                severity = activeRule.severity,
-                type = type,
-                primaryLocation = primaryLocation,
-                duration = activeRule.remediationConstant,
-                secondaryLocations = secondaryLocations
-            )
-        }
-        val genericReport = GenericIssueData(genericIssues)
-
-        val mapper = ObjectMapper()
-        return mapper.writeValueAsString(genericReport)
-    }
-
-    private fun createTextRange(startLine: Int, endLine: Int, startLineOffset: Int, endLineOffset: Int): TextRange {
-        return TextRange(
-                startLine = startLine,
-                endLine = if (endLine > -1) endLine else null,
-                startColumn = if (startLineOffset > -1) startLineOffset else null,
-                endColumn = if (endLineOffset > -1) endLineOffset else null)
     }
 
     companion object {
