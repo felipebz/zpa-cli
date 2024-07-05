@@ -1,14 +1,10 @@
-## Changelog
-
-{{changelogChanges}}
-
 ## Highlights
 
-### Support for custom plugins
+## ZPA 3.6.0-SNAPSHOT
 
-ZPA CLI now supports the same custom plugins as the ZPA Plugin for SonarQube. You can create a plugin by following the [plugin development guide](https://github.com/felipebz/zpa/wiki/Create-a-plugin-with-custom-rules).
+This release includes the [latest version of ZPA (3.6.0-SNAPSHOT)](https://github.com/felipebz/zpa/releases/tag/early-access).
 
-To use a custom plugin, simply add the JAR file to the `plugins` directory.
+Make sure to build your custom plugins with this version of ZPA before using them in ZPA CLI.
 
 ## Binaries
 
@@ -29,3 +25,6 @@ These binaries provide their own Java runtime.
 | Alpine Linux (musl) | {{#f_release_download_url}}zpa-cli-{{projectVersion}}-linux_musl-x86_64.tar.gz{{/f_release_download_url}} | |
 | Windows | {{#f_release_download_url}}zpa-cli-{{projectVersion}}-windows-x86_64.zip{{/f_release_download_url}} | |
 
+## Full changelog
+
+{{changelogChanges}}
