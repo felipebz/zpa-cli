@@ -5,6 +5,8 @@ import br.com.felipezorzo.zpa.cli.exporters.GenericIssueFormatExporter
 import br.com.felipezorzo.zpa.cli.plugin.PluginManager
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
+import me.lucko.jarrelocator.JarRelocator
+import me.lucko.jarrelocator.Relocation
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
 import org.sonar.plsqlopen.metadata.FormsMetadata
 import org.sonar.plsqlopen.rules.ActiveRules
@@ -18,7 +20,9 @@ import org.sonar.plugins.plsqlopen.api.PlSqlFile
 import org.sonar.plugins.plsqlopen.api.ZpaRulesDefinition
 import org.sonar.plugins.plsqlopen.api.checks.PlSqlVisitor
 import java.io.File
+import java.io.IOException
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -26,6 +30,7 @@ import java.util.logging.LogManager
 import java.util.stream.Collectors
 import kotlin.io.path.absolute
 import kotlin.io.path.extension
+import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.system.measureTimeMillis
 
@@ -46,7 +51,27 @@ class Main(private val args: Arguments) {
             Path.of(".")
         }
 
-        val pluginManager = PluginManager(appHome.resolve("plugins"))
+        val tempDir = Files.createTempDirectory("zpa-cli")
+        tempDir.toFile().deleteOnExit()
+
+        val pluginRoot = appHome.resolve("plugins")
+        pluginRoot.listDirectoryEntries("*.jar").forEach {
+            val input = it.toFile()
+            val output = tempDir.resolve(it.fileName).toFile()
+            output.deleteOnExit()
+
+            val rules: MutableList<Relocation> = ArrayList<Relocation>()
+            rules.add(Relocation("org.sonar.plugins.plsqlopen.api.sslr", "com.felipebz.flr.api"))
+
+            val relocator = JarRelocator(input, output, rules)
+            try {
+                relocator.run()
+            } catch (e: IOException) {
+                throw RuntimeException("Unable to relocate", e)
+            }
+        }
+
+        val pluginManager = PluginManager(tempDir)
         pluginManager.loadPlugins()
         pluginManager.startPlugins()
 
