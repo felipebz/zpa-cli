@@ -17,4 +17,7 @@ class Arguments {
 
     @Parameter(names = ["--output-file"], description = "Output filename")
     var outputFile: String = ""
+
+    @Parameter(names = ["--config"], description = "Config file")
+    var configFile: String = ""
 }

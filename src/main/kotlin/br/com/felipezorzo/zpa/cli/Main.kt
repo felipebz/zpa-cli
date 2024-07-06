@@ -1,10 +1,12 @@
 package br.com.felipezorzo.zpa.cli
 
+import br.com.felipezorzo.zpa.cli.config.ConfigFile
 import br.com.felipezorzo.zpa.cli.exporters.ConsoleExporter
 import br.com.felipezorzo.zpa.cli.exporters.GenericIssueFormatExporter
 import br.com.felipezorzo.zpa.cli.plugin.PluginManager
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
+import com.fasterxml.jackson.databind.ObjectMapper
 import me.lucko.jarrelocator.JarRelocator
 import me.lucko.jarrelocator.Relocation
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
@@ -94,7 +96,12 @@ class Main(private val args: Arguments) {
             val baseDirPath = baseDir.toPath()
 
             val activeRules = ActiveRules()
-            // TODO: read the configuration from a file and call activeRules.configureRules with the list of rules
+            if (args.configFile.isNotEmpty()) {
+                val configFile = File(args.configFile)
+                val mapper = ObjectMapper()
+                val config = mapper.readValue(configFile, ConfigFile::class.java)
+                activeRules.configureRules(config.rules.map { it.toActiveRuleConfiguration() })
+            }
 
             val ruleMetadataLoader = RuleMetadataLoader()
 
