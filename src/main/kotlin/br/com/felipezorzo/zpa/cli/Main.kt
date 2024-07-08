@@ -6,15 +6,12 @@ import br.com.felipezorzo.zpa.cli.exporters.GenericIssueFormatExporter
 import br.com.felipezorzo.zpa.cli.plugin.PluginManager
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import me.lucko.jarrelocator.JarRelocator
 import me.lucko.jarrelocator.Relocation
 import org.sonar.plsqlopen.CustomAnnotationBasedRulesDefinition
 import org.sonar.plsqlopen.metadata.FormsMetadata
-import org.sonar.plsqlopen.rules.ActiveRules
-import org.sonar.plsqlopen.rules.Repository
-import org.sonar.plsqlopen.rules.RuleMetadataLoader
-import org.sonar.plsqlopen.rules.ZpaChecks
+import org.sonar.plsqlopen.rules.*
 import org.sonar.plsqlopen.squid.AstScanner
 import org.sonar.plsqlopen.squid.ProgressReport
 import org.sonar.plsqlopen.utils.log.Loggers
@@ -95,12 +92,28 @@ class Main(private val args: Arguments) {
             val baseDir = File(args.sources).absoluteFile
             val baseDirPath = baseDir.toPath()
 
+            val mapper = jacksonObjectMapper()
+
             val activeRules = ActiveRules()
             if (args.configFile.isNotEmpty()) {
                 val configFile = File(args.configFile)
-                val mapper = ObjectMapper()
                 val config = mapper.readValue(configFile, ConfigFile::class.java)
-                activeRules.configureRules(config.rules.map { it.toActiveRuleConfiguration() })
+                activeRules.configureRules(config.rules.map {
+                    var repositoryKey = "zpa"
+                    var ruleKey = it.key
+                    if (it.key.contains(':')) {
+                        val keys = it.key.split(':')
+                        repositoryKey = keys[0]
+                        ruleKey = keys[1]
+                    }
+
+                    ActiveRuleConfiguration(
+                        repositoryKey,
+                        ruleKey,
+                        it.value.options.level,
+                        it.value.options.parameters
+                    )
+                })
             }
 
             val ruleMetadataLoader = RuleMetadataLoader()

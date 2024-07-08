@@ -1,0 +1,84 @@
+{
+    "rules": {
+        "EmptyBlock": "minor",
+        "ParsingError": "info",
+        "CollapsibleIfStatements": "major",
+        "InequalityUsage": "major",
+        "ComparisonWithNull": "blocker",
+        "TooManyRowsHandler": "critical",
+        "InsertWithoutColumns": "critical",
+        "DeclareSectionWithoutDeclarations": "info",
+        "NvlWithNullParameter": "blocker",
+        "ComparisonWithBoolean": "minor",
+        "CharacterDatatypeUsage": "minor",
+        "SelectAllColumns": "major",
+        "ColumnsShouldHaveTableName": "major",
+        "SelectWithRownumAndOrderBy": "blocker",
+        "ToDateWithoutFormat": "major",
+        "ExplicitInParameter": "minor",
+        "VariableInitializationWithNull": "minor",
+        "UselessParenthesis": "minor",
+        "IdenticalExpression": "blocker",
+        "EmptyStringAssignment": "minor",
+        "DuplicatedValueInIn": "blocker",
+        "VariableInitializationWithFunctionCall": "major",
+        "IfWithExit": "minor",
+        "FunctionWithOutParameter": "major",
+        "SameCondition": "blocker",
+        "AddParenthesesInNestedExpression": "major",
+        "RaiseStandardException": "major",
+        "NotFound": "minor",
+        "QueryWithoutExceptionHandling": {
+            "level": "critical",
+            "parameters": {
+                "strict": "true"
+            }
+        },
+        "UnusedVariable": "major",
+        "VariableHiding": "major",
+        "DbmsOutputPut": "minor",
+        "ReturnOfBooleanExpression": "minor",
+        "UnnecessaryElse": "minor",
+        "DeadCode": "major",
+        "ConcatenationWithNull": "minor",
+        "SameBranch": "major",
+        "UnusedParameter": {
+            "level": "major",
+            "parameters": {
+                "ignoreMethods": ""
+            }
+        },
+        "CommitRollback": "major",
+        "UnnecessaryNullStatement": "minor",
+        "DuplicateConditionIfElsif": "blocker",
+        "UnnecessaryAliasInQuery": {
+            "level": "minor",
+            "parameters": {
+                "acceptedLength": "3"
+            }
+        },
+        "VariableInCount": "blocker",
+        "UnhandledUserDefinedException": "critical",
+        "UnusedCursor": "major",
+        "NotASelectedExpression": "critical",
+        "InvalidReferenceToObject": "major",
+        "CursorBodyInPackageSpec": "major",
+        "XPath": {
+            "level": "major",
+            "parameters": {
+                "xpathQuery": "",
+                "message": "The XPath expression matches this piece of code"
+            }
+        },
+        "VariableName": {
+            "level": "minor",
+            "parameters": {
+                "regexp": "[a-zA-Z]([a-zA-Z0-9_]*[a-zA-Z0-9])?"
+            }
+        },
+        "ToCharInOrderBy": "major",
+        "DisabledTest": "major",
+        "RedundantExpectation": "major",
+        "UnnecessaryLike": "minor"
+    }
+}

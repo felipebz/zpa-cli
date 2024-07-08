@@ -37,6 +37,7 @@ dependencies {
     implementation("com.felipebz.zpa:zpa-core:3.6.0-SNAPSHOT")
     implementation("com.felipebz.zpa:zpa-checks:3.6.0-SNAPSHOT")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     implementation("org.pf4j:pf4j:3.11.1")
     implementation("org.slf4j:slf4j-jdk14:2.0.13")
     implementation("me.lucko:jar-relocator:1.7")
