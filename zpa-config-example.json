@@ -1,4 +1,5 @@
 {
+    "$schema": "schema.json",
     "rules": {
         "EmptyBlock": "minor",
         "ParsingError": "info",
