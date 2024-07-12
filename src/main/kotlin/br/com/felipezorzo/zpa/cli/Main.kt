@@ -110,7 +110,7 @@ class Main(private val args: Arguments) {
                     ActiveRuleConfiguration(
                         repositoryKey,
                         ruleKey,
-                        it.value.options.level,
+                        it.value.options.level.toString(),
                         it.value.options.parameters
                     )
                 })

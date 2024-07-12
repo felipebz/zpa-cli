@@ -1,5 +1,7 @@
 package br.com.felipezorzo.zpa.cli.config
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.*
@@ -7,6 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
+@JsonIgnoreProperties(value = ["\$schema"])
 data class ConfigFile(
     val rules: Map<String, RuleConfiguration>
 )
@@ -17,11 +20,25 @@ class RuleConfiguration {
     var options: RuleOptions = RuleOptions()
 }
 
+enum class RuleLevel {
+    @JsonProperty("on")
+    ON,
+    @JsonProperty("off")
+    OFF,
+    @JsonProperty("blocker")
+    BLOCKER,
+    @JsonProperty("critical")
+    CRITICAL,
+    @JsonProperty("major")
+    MAJOR,
+    @JsonProperty("minor")
+    MINOR,
+    @JsonProperty("info")
+    INFO
+}
+
 class RuleOptions {
-    var level: String? = null
-        set(value) {
-            field = value?.lowercase()
-        }
+    lateinit var level: RuleLevel
     var parameters: Map<String, String> = emptyMap()
 }
 
@@ -32,7 +49,7 @@ class RuleCategoryDeserializer : JsonDeserializer<RuleConfiguration>() {
         val mapper = jacksonObjectMapper()
 
         if (node.isTextual) {
-            ruleConfiguration.options.level = node.asText().uppercase()
+            ruleConfiguration.options.level = RuleLevel.valueOf(node.asText().uppercase())
         } else if (node.isObject) {
             ruleConfiguration.options = mapper.treeToValue(node, RuleOptions::class.java)
         }
