@@ -21,6 +21,9 @@ Currently, the zpa-cli supports these options:
 * `--extensions`: File extensions to analyze, separated by comma. The default value is `sql,pkg,pks,pkb,fun,pcd,tgg,prc,tpb,trg,typ,tab,tps`.
 * `--output-format`: Format of the output. The default value is `console`.  
 * `--output-file`: Path to the output file.
+* `--config`: Path to the configuration file. The file format must comply with the [provided JSON schema](schema.json).
+  You can refer to the example [zpa-config-example.json](zpa-config-example.json) for guidance. If the configuration
+  file is not provided, only the rules marked as "activated by default" will be executed.
 
 Output formats:
 * `console`: writes the analysis result on the standard output
