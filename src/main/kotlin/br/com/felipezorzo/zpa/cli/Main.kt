@@ -1,6 +1,8 @@
 package br.com.felipezorzo.zpa.cli
 
+import br.com.felipezorzo.zpa.cli.config.BaseRuleCategory
 import br.com.felipezorzo.zpa.cli.config.ConfigFile
+import br.com.felipezorzo.zpa.cli.config.RuleConfiguration
 import br.com.felipezorzo.zpa.cli.config.RuleLevel
 import br.com.felipezorzo.zpa.cli.exporters.ConsoleExporter
 import br.com.felipezorzo.zpa.cli.exporters.GenericIssueFormatExporter
@@ -159,14 +161,16 @@ class Main(private val args: Arguments) {
             val configFile = File(args.configFile)
             mapper.readValue(configFile, ConfigFile::class.java)
         } else {
-            ConfigFile(emptyMap())
+            ConfigFile()
         }
 
-        if (config.rules.isEmpty()) {
-            activeRules.addRuleConfigurer { _, rule, _ -> rule.isActivatedByDefault }
-        } else {
-            activeRules.addRuleConfigurer() { repo, rule, configuration ->
-                val ruleConfig = config.rules["${repo.key}:${rule.key}"] ?: config.rules[rule.key]
+        if (config.rules.isNotEmpty()) {
+            activeRules.addRuleConfigurer { repo, rule, configuration ->
+                var ruleConfig = config.rules["${repo.key}:${rule.key}"] ?: config.rules[rule.key]
+                if (config.base == BaseRuleCategory.DEFAULT && rule.isActivatedByDefault) {
+                    ruleConfig = ruleConfig ?: RuleConfiguration()
+                }
+
                 if (ruleConfig == null || ruleConfig.options.level == RuleLevel.OFF) {
                     return@addRuleConfigurer false
                 }

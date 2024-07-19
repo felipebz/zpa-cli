@@ -11,8 +11,16 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 @JsonIgnoreProperties(value = ["\$schema"])
 data class ConfigFile(
-    val rules: Map<String, RuleConfiguration>
+    val base: BaseRuleCategory = BaseRuleCategory.DEFAULT,
+    val rules: Map<String, RuleConfiguration> = emptyMap(),
 )
+
+enum class BaseRuleCategory {
+    @JsonProperty("default")
+    DEFAULT,
+    @JsonProperty("none")
+    NONE
+}
 
 @JsonDeserialize(using = RuleCategoryDeserializer::class)
 @JsonSerialize(using = RuleCategorySerializer::class)
@@ -38,7 +46,7 @@ enum class RuleLevel {
 }
 
 class RuleOptions {
-    lateinit var level: RuleLevel
+    var level: RuleLevel = RuleLevel.ON
     var parameters: Map<String, String> = emptyMap()
 }
 

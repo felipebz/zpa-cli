@@ -1,6 +1,13 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$defs": {
+        "BaseRuleCategory": {
+            "type": "string",
+            "enum": [
+                "default",
+                "none"
+            ]
+        },
         "RuleLevel": {
             "type": "string",
             "enum": [
@@ -29,6 +36,9 @@
     },
     "type": "object",
     "properties": {
+        "base": {
+            "$ref": "#/$defs/BaseRuleCategory"
+        },
         "rules": {
             "additionalProperties": {
                 "oneOf": [
