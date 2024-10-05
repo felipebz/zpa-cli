@@ -1,85 +1,78 @@
 {
     "$schema": "schema.json",
     "rules": {
-        "EmptyBlock": "minor",
-        "ParsingError": "info",
-        "CollapsibleIfStatements": "major",
-        "InequalityUsage": "major",
-        "ComparisonWithNull": "blocker",
-        "TooManyRowsHandler": "critical",
-        "InsertWithoutColumns": "critical",
-        "DeclareSectionWithoutDeclarations": "info",
-        "NvlWithNullParameter": "blocker",
-        "ComparisonWithBoolean": "minor",
-        "CharacterDatatypeUsage": "minor",
-        "SelectAllColumns": "major",
-        "ColumnsShouldHaveTableName": "major",
-        "SelectWithRownumAndOrderBy": "blocker",
-        "ToDateWithoutFormat": "major",
-        "ExplicitInParameter": "minor",
-        "VariableInitializationWithNull": "minor",
-        "UselessParenthesis": "minor",
-        "IdenticalExpression": "blocker",
-        "EmptyStringAssignment": "minor",
-        "DuplicatedValueInIn": "blocker",
-        "VariableInitializationWithFunctionCall": "major",
-        "IfWithExit": "minor",
-        "FunctionWithOutParameter": "major",
-        "SameCondition": "blocker",
         "AddParenthesesInNestedExpression": "major",
-        "RaiseStandardException": "major",
+        "CharacterDatatypeUsage": "minor",
+        "CollapsibleIfStatements": "major",
+        "ColumnsShouldHaveTableName": "major",
+        "CommitRollback": "major",
+        "ComparisonWithBoolean": "minor",
+        "ComparisonWithNull": "blocker",
+        "ConcatenationWithNull": "minor",
+        "CursorBodyInPackageSpec": "major",
+        "DbmsOutputPut": "minor",
+        "DeadCode": "major",
+        "DeclareSectionWithoutDeclarations": "info",
+        "DisabledTest": "major",
+        "DuplicateConditionIfElsif": "blocker",
+        "DuplicatedValueInIn": "blocker",
+        "EmptyBlock": "minor",
+        "EmptyStringAssignment": "minor",
+        "ExplicitInParameter": "minor",
+        "FunctionWithOutParameter": "major",
+        "IdenticalExpression": "blocker",
+        "IfWithExit": "minor",
+        "InequalityUsage": "major",
+        "InsertWithoutColumns": "critical",
+        "InvalidReferenceToObject": "major",
+        "NotASelectedExpression": "critical",
         "NotFound": "minor",
+        "NvlWithNullParameter": "blocker",
+        "ParsingError": "info",
         "QueryWithoutExceptionHandling": {
             "level": "critical",
             "parameters": {
                 "strict": "true"
             }
         },
-        "UnusedVariable": "major",
-        "VariableHiding": "major",
-        "DbmsOutputPut": "minor",
+        "RaiseStandardException": "major",
+        "RedundantExpectation": "major",
         "ReturnOfBooleanExpression": "minor",
-        "UnnecessaryElse": "minor",
-        "DeadCode": "major",
-        "ConcatenationWithNull": "minor",
         "SameBranch": "major",
-        "UnusedParameter": {
-            "level": "major",
-            "parameters": {
-                "ignoreMethods": ""
-            }
-        },
-        "CommitRollback": "major",
-        "UnnecessaryNullStatement": "minor",
-        "DuplicateConditionIfElsif": "blocker",
+        "SameCondition": "blocker",
+        "SelectAllColumns": "major",
+        "SelectWithRownumAndOrderBy": "blocker",
+        "ToCharInOrderBy": "major",
+        "ToDateWithoutFormat": "major",
+        "TooManyRowsHandler": "critical",
+        "UnhandledUserDefinedException": "critical",
         "UnnecessaryAliasInQuery": {
             "level": "minor",
             "parameters": {
                 "acceptedLength": "3"
             }
         },
-        "VariableInCount": "blocker",
-        "UnhandledUserDefinedException": "critical",
+        "UnnecessaryElse": "minor",
+        "UnnecessaryLike": "minor",
+        "UnnecessaryNullStatement": "minor",
         "UnusedCursor": "major",
-        "NotASelectedExpression": "critical",
-        "InvalidReferenceToObject": "major",
-        "CursorBodyInPackageSpec": "major",
-        "XPath": {
+        "UnusedParameter": {
             "level": "major",
             "parameters": {
-                "xpathQuery": "",
-                "message": "The XPath expression matches this piece of code"
+                "ignoreMethods": ""
             }
         },
+        "UnusedVariable": "major",
+        "UselessParenthesis": "minor",
+        "VariableHiding": "major",
+        "VariableInCount": "blocker",
+        "VariableInitializationWithFunctionCall": "major",
+        "VariableInitializationWithNull": "minor",
         "VariableName": {
             "level": "minor",
             "parameters": {
                 "regexp": "[a-zA-Z]([a-zA-Z0-9_]*[a-zA-Z0-9])?"
             }
-        },
-        "ToCharInOrderBy": "major",
-        "DisabledTest": "major",
-        "RedundantExpectation": "major",
-        "UnnecessaryLike": "minor"
+        }
     }
 }
