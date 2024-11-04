@@ -8,8 +8,8 @@ plugins {
     `maven-publish`
     kotlin("jvm") version "2.0.21"
     application
-    id("org.jreleaser") version "1.14.0"
-    id("org.jreleaser.jdks") version "1.14.0"
+    id("org.jreleaser") version "1.15.0"
+    id("org.jreleaser.jdks") version "1.15.0"
 }
 
 java {
@@ -36,7 +36,7 @@ dependencies {
     implementation("org.jcommander:jcommander:2.0")
     implementation("com.felipebz.zpa:zpa-core:3.6.0")
     implementation("com.felipebz.zpa:zpa-checks:3.6.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1")
     implementation("org.pf4j:pf4j:3.12.1")
     implementation("org.slf4j:slf4j-jdk14:2.0.16")
     implementation("me.lucko:jar-relocator:1.7")
