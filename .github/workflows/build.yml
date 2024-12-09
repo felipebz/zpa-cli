@@ -87,7 +87,7 @@ jobs:
             --output-format sq-generic-issue-import
 
       - name: Analyze with SonarCloud
-        uses: sonarsource/sonarcloud-github-action@v3
+        uses: sonarsource/sonarcloud-github-action@v4
         with:
           args: >
             -Dsonar.projectKey=utPLSQL-zpa-demo
