@@ -7,7 +7,7 @@ RUN "$JAVA_HOME"/bin/jlink \
          --no-header-files \
          --output /javaruntime
 
-FROM alpine:3.21
+FROM alpine:3.22
 ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
