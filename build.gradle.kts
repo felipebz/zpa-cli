@@ -9,7 +9,7 @@ plugins {
     kotlin("jvm") version "2.2.0"
     application
     id("org.jreleaser") version "1.19.0"
-    id("org.jreleaser.jdks") version "1.18.0"
+    id("org.jreleaser.jdks") version "1.19.0"
 }
 
 java {
