@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21.0.7_6-jdk-alpine AS jre-build
+FROM eclipse-temurin:21.0.8_9-jdk-alpine AS jre-build
 
 RUN "$JAVA_HOME"/bin/jlink \
          --add-modules java.logging,java.xml \
