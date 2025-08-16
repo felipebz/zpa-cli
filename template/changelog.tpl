@@ -1,8 +1,8 @@
 ## Highlights
 
-## ZPA 3.6.0
+## ZPA 3.8.0
 
-This release includes the [latest version of ZPA (3.6.0)](https://github.com/felipebz/zpa/releases/tag/3.6.0).
+This release includes the [latest version of ZPA (3.8.0)](https://github.com/felipebz/zpa/releases/tag/3.8.0).
 
 Make sure to build your custom plugins with this version of ZPA before using them in ZPA CLI.
 
