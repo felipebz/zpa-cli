@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import java.util.stream.Collectors
 import kotlin.io.path.absolute
+import kotlin.io.path.exists
 import kotlin.io.path.extension
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
@@ -62,19 +63,21 @@ class Main(private val args: Arguments) {
         tempDir.toFile().deleteOnExit()
 
         val pluginRoot = appHome.resolve("plugins")
-        pluginRoot.listDirectoryEntries("*.jar").forEach {
-            val input = it.toFile()
-            val output = tempDir.resolve(it.fileName).toFile()
-            output.deleteOnExit()
+        if (pluginRoot.exists()) {
+            pluginRoot.listDirectoryEntries("*.jar").forEach {
+                val input = it.toFile()
+                val output = tempDir.resolve(it.fileName).toFile()
+                output.deleteOnExit()
 
-            val rules: MutableList<Relocation> = ArrayList<Relocation>()
-            rules.add(Relocation("org.sonar.plugins.plsqlopen.api.sslr", "com.felipebz.flr.api"))
+                val rules: MutableList<Relocation> = ArrayList<Relocation>()
+                rules.add(Relocation("org.sonar.plugins.plsqlopen.api.sslr", "com.felipebz.flr.api"))
 
-            val relocator = JarRelocator(input, output, rules)
-            try {
-                relocator.run()
-            } catch (e: IOException) {
-                throw RuntimeException("Unable to relocate", e)
+                val relocator = JarRelocator(input, output, rules)
+                try {
+                    relocator.run()
+                } catch (e: IOException) {
+                    throw RuntimeException("Unable to relocate", e)
+                }
             }
         }
 
