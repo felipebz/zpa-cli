@@ -6,7 +6,7 @@ version = "2.3.0-SNAPSHOT"
 
 plugins {
     `maven-publish`
-    kotlin("jvm") version "2.2.0"
+    kotlin("jvm") version "2.2.10"
     application
     id("org.jreleaser") version "1.19.0"
     id("org.jreleaser.jdks") version "1.19.0"
