@@ -22,10 +22,10 @@ jobs:
 
       - uses: actions/setup-java@v5
         with:
-          distribution: temurin
+          distribution: liberica
           java-version: |
             17
-            21
+            25
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4

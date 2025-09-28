@@ -78,53 +78,52 @@ publishing {
 
 data class Jdk(val arch: String, val os: String, val extension: String, val checksum: String, val platform: String = os)
 
-val baseJdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download"
-val jdkBuild = "21.0.8+9"
+val baseJdkUrl = "https://download.bell-sw.com/java"
+val jdkBuild = "25+37"
 val jdkVersion = jdkBuild.split('.', '+').first()
-val jdkBuildFilename = jdkBuild.replace('+', '_')
 val jdksToBuild = listOf(
     Jdk(
-        arch = "x64",
+        arch = "amd64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "f2dc5418092c43003db8f9005c4a286e1c0104fea96ccdd49e8ebd037cac9219"
+        checksum = "227e712de039721f59b69a18e5f7f3eaffb4ee1d"
     ),
 
     Jdk(
         arch = "aarch64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "e5c41a1ab0865ea5de9b4529bf8526005f1d4593090845387d14fe450ce39c33"
+        checksum = "eb4ef3e14fdbec3923dcbb66b7e94a9d9f2233ac"
     ),
 
     Jdk(
-        arch = "x64",
-        os = "mac",
+        arch = "amd64",
+        os = "macos",
         extension = "tar.gz",
-        checksum = "0ceaf7060b2c9dbbe8ecc4fb9351c6b4cf24e4350d58772c9656589933a4fdeb",
+        checksum = "8c7382ddba61ecda4d8e8140adfc12672e3be9a1",
         platform = "osx"
     ),
 
     Jdk(
         arch = "aarch64",
-        os = "mac",
+        os = "macos",
         extension = "tar.gz",
-        checksum = "59422c2292ae4e76b87e00d8808dbe49cffa39af731e08bb0292ddb0af4e0261",
+        checksum = "ea5b2adf6d597708aeec750e4a26ed277520df21",
         platform = "osx"
     ),
 
     Jdk(
-        arch = "x64",
+        arch = "amd64",
         os = "windows",
         extension = "zip",
-        checksum = "5dbb74a4edda94c2aae97a1e30f448db0ad9023a9466fe31a8c68377d9dfbac4"
+        checksum = "7a62e1df0da604723115acfb3240a79cd1261771"
     ),
 
     Jdk(
-        arch = "x64",
-        os = "alpine-linux",
+        arch = "x64-musl",
+        os = "linux",
         extension = "tar.gz",
-        checksum = "73c4cbe10f4f385383d9cb54d34f2bee2c68b5265f9e3d954f3326948c40c0be",
+        checksum = "52c62204a06c73c91147d34b1319858f2b5e1fc8",
         platform = "linux_musl"
     ),
 )
@@ -133,8 +132,8 @@ jdks {
     jdksToBuild.forEach {
         create("${it.platform}_${it.arch}") {
             platform.set(it.platform)
-            url.set("$baseJdkUrl/jdk-$jdkBuild/OpenJDK${jdkVersion}U-jdk_${it.arch}_${it.os}_hotspot_$jdkBuildFilename.${it.extension}")
-            checksum.set(it.checksum)
+            url.set("$baseJdkUrl/$jdkBuild/bellsoft-jdk${jdkBuild}-${it.os}-${it.arch}.${it.extension}")
+            checksum.set("SHA-1/${it.checksum}")
         }
     }
 }
@@ -169,11 +168,16 @@ jreleaser {
                         val jreleaserOs = it.platform
                         val jreleaseArch = when (it.arch) {
                             "aarch64" -> "aarch_64"
-                            "x64" -> "x86_64"
+                            "amd64" -> "x86_64"
+                            "x64-musl" -> "x86_64"
                             else -> ""
                         }
-                        val additionalDir = if (it.os == "mac") "/Contents/Home" else ""
-                        path.set(file("build/jdks/${it.platform}_${it.arch}/jdk-$jdkBuild$additionalDir"))
+                        val dirArch = when (it.arch) {
+                            "x64-musl" -> "x64Musl"
+                            else -> it.arch
+                        }
+                        val additionalDir = if (it.os == "macos") ".jdk" else ""
+                        path.set(file("build/jdks/${jreleaserOs}_${dirArch}/jdk-$jdkVersion$additionalDir"))
                         platform.set("$jreleaserOs-$jreleaseArch")
                         extraProperties.put("archiveFormat", if (jreleaserOs == "windows") "ZIP" else "TAR_GZ")
                         options {
@@ -183,7 +187,7 @@ jreleaser {
                 }
                 jdk {
                     val jdkPath = javaToolchains.launcherFor {
-                        languageVersion.set(JavaLanguageVersion.of(21))
+                        languageVersion.set(JavaLanguageVersion.of(25))
                     }.get().metadata.installationPath
 
                     path.set(file(jdkPath))

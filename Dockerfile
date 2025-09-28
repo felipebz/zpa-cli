@@ -1,32 +1,25 @@
-FROM eclipse-temurin:21.0.8_9-jdk-alpine AS jre-build
+FROM bellsoft/liberica-runtime-container:jre-25_37-slim-musl
 
-RUN "$JAVA_HOME"/bin/jlink \
-         --add-modules java.logging,java.xml \
-         --strip-debug \
-         --no-man-pages \
-         --no-header-files \
-         --output /javaruntime
+RUN addgroup -S -g 1001 zpa-cli \
+ && adduser -S -D -u 1001 -G zpa-cli -h /home/zpa-cli zpa-cli
 
-FROM alpine:3.22
-ENV JAVA_HOME=/opt/java/openjdk
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
-
-RUN addgroup -S -g 1001 zpa-cli && adduser -S -D -u 1001 -G zpa-cli zpa-cli
-
-COPY --from=jre-build /javaruntime $JAVA_HOME
-
-ADD build/distributions/zpa-cli-*.tar /opt/
+COPY build/distributions/zpa-cli-*.tar /tmp/
 
 RUN set -eux; \
-    mv /opt/zpa-cli-*/ /opt/zpa-cli/; \
-    chown -R zpa-cli:zpa-cli /opt
+    mkdir -p /opt/zpa-cli; \
+    tar -xf /tmp/zpa-cli-*.tar --strip-components=1 -C /opt/zpa-cli; \
+    rm -f /tmp/zpa-cli-*.tar; \
+    chown -R 1001:1001 /opt/zpa-cli
 
 ENV PATH=/opt/zpa-cli/bin:$PATH
 
-USER zpa-cli
-
+USER 1001:1001
 WORKDIR /src
 
-ENTRYPOINT ["zpa-cli"]
+ENTRYPOINT ["/opt/zpa-cli/bin/zpa-cli"]
+CMD ["--help"]
 
-CMD [ "zpa-cli", "--help" ]
+LABEL org.opencontainers.image.title="zpa-cli" \
+      org.opencontainers.image.description="ZPA CLI tool" \
+      org.opencontainers.image.source="https://github.com/felipebz/zpa-cli" \
+      org.opencontainers.image.licenses="LGPL-3.0"
