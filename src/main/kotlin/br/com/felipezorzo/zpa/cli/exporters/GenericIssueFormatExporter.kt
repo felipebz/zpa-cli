@@ -3,7 +3,7 @@ package br.com.felipezorzo.zpa.cli.exporters
 import br.com.felipezorzo.zpa.cli.InputFile
 import br.com.felipezorzo.zpa.cli.sqissue.*
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.sonar.plsqlopen.squid.ZpaIssue
+import com.felipebz.zpa.squid.ZpaIssue
 import java.io.File
 
 class GenericIssueFormatExporter(private val outputFile: String) : IssueExporter {

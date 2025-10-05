@@ -1,7 +1,7 @@
 package br.com.felipezorzo.zpa.cli
 
-import org.sonar.plsqlopen.checks.CheckList
-import org.sonar.plugins.plsqlopen.api.ZpaRulesDefinition
+import com.felipebz.zpa.api.ZpaRulesDefinition
+import com.felipebz.zpa.checks.CheckList
 
 class DefaultRulesDefinition : ZpaRulesDefinition {
     override fun checkClasses(): Array<Class<*>> {

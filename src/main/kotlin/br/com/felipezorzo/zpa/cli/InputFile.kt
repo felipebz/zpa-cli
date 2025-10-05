@@ -1,6 +1,6 @@
 package br.com.felipezorzo.zpa.cli
 
-import org.sonar.plugins.plsqlopen.api.PlSqlFile
+import com.felipebz.zpa.api.PlSqlFile
 import java.io.File
 import java.nio.charset.Charset
 import java.nio.file.Path

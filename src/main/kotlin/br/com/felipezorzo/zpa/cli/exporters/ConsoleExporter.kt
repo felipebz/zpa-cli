@@ -1,7 +1,7 @@
 package br.com.felipezorzo.zpa.cli.exporters
 
 import br.com.felipezorzo.zpa.cli.InputFile
-import org.sonar.plsqlopen.squid.ZpaIssue
+import com.felipebz.zpa.squid.ZpaIssue
 
 class ConsoleExporter : IssueExporter {
     override fun export(issues: List<ZpaIssue>) {
