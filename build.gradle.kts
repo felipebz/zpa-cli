@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jcommander:jcommander:2.0")
+    implementation("org.jcommander:jcommander:3.0")
     implementation("com.felipebz.zpa:zpa-core:4.0.0")
     implementation("com.felipebz.zpa:zpa-checks:4.0.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.20.0")
