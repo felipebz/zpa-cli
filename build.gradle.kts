@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jreleaser.model.api.common.ArchiveOptions
 
 group = "com.felipebz.zpa"
-version = "3.1.0-SNAPSHOT"
+version = "3.0.1"
 
 plugins {
     `maven-publish`
