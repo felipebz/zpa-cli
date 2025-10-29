@@ -71,6 +71,7 @@ class Main(private val args: Arguments) {
 
                 val rules: MutableList<Relocation> = ArrayList<Relocation>()
                 rules.add(Relocation("org.sonar.plugins.plsqlopen.api.sslr", "com.felipebz.flr.api"))
+                rules.add(Relocation("org.sonar.plugins.plsqlopen.api", "com.felipebz.zpa.api"))
 
                 val relocator = JarRelocator(input, output, rules)
                 try {
