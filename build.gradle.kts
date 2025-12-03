@@ -8,7 +8,7 @@ plugins {
     `maven-publish`
     kotlin("jvm") version "2.2.21"
     application
-    id("org.jreleaser") version "1.20.0"
+    id("org.jreleaser") version "1.21.0"
     id("org.jreleaser.jdks") version "1.21.0"
 }
 
