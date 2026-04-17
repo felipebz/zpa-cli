@@ -7,6 +7,7 @@ import br.com.felipezorzo.zpa.cli.config.RuleLevel
 import br.com.felipezorzo.zpa.cli.exporters.ConsoleExporter
 import br.com.felipezorzo.zpa.cli.exporters.GenericIssueFormatExporter
 import br.com.felipezorzo.zpa.cli.plugin.PluginManager
+import br.com.felipezorzo.zpa.cli.rules.CliActiveRules
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -15,7 +16,6 @@ import com.felipebz.zpa.api.PlSqlFile
 import com.felipebz.zpa.api.ZpaRulesDefinition
 import com.felipebz.zpa.api.checks.PlSqlVisitor
 import com.felipebz.zpa.metadata.FormsMetadata
-import com.felipebz.zpa.rules.ActiveRules
 import com.felipebz.zpa.rules.Repository
 import com.felipebz.zpa.rules.RuleMetadataLoader
 import com.felipebz.zpa.rules.ZpaChecks
@@ -159,14 +159,15 @@ class Main(private val args: Arguments) {
         pluginManager.unloadPlugins()
     }
 
-    private fun getActiveRules(): ActiveRules {
-        val activeRules = ActiveRules()
+    private fun getActiveRules(): CliActiveRules {
         val config = if (args.configFile.isNotEmpty()) {
             val configFile = File(args.configFile)
             mapper.readValue(configFile, ConfigFile::class.java)
         } else {
             ConfigFile()
         }
+
+        val activeRules = CliActiveRules(config)
 
         if (config.rules.isNotEmpty()) {
             activeRules.addRuleConfigurer { repo, rule, configuration ->
