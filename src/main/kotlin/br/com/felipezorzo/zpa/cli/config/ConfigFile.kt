@@ -48,6 +48,7 @@ enum class RuleLevel {
 class RuleOptions {
     var level: RuleLevel = RuleLevel.ON
     var parameters: Map<String, String> = emptyMap()
+    var templateRuleKey: String? = null
 }
 
 class RuleCategoryDeserializer : JsonDeserializer<RuleConfiguration>() {
