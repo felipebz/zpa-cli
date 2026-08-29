@@ -24,7 +24,6 @@ jobs:
         with:
           distribution: liberica
           java-version: |
-            17
             25
 
       - name: Setup Gradle
