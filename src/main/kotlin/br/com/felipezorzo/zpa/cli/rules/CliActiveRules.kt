@@ -75,6 +75,8 @@ class CliActiveRules(val config: ConfigFile?) : ZpaActiveRules {
             tags = templateRule.tags
             htmlDescription = templateRule.htmlDescription
             isActivatedByDefault = templateRule.isActivatedByDefault
+            // A synthetic rule is an instance of the template, not another template.
+            template = false
             templateRule.params.forEach { param ->
                 createParam(param.key).apply {
                     description = param.description
