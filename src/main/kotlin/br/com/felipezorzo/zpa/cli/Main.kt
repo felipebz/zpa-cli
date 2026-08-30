@@ -108,14 +108,12 @@ class Main(private val args: Arguments) {
 
             val ruleMetadataLoader = RuleMetadataLoader()
 
-            val checkList = mutableListOf<PlSqlVisitor>()
-
             val rulesDefinitions = listOf(
                 DefaultRulesDefinition(),
                 *pluginManager.getExtensions(ZpaRulesDefinition::class.java).toTypedArray()
             )
 
-            for (rulesDefinition in rulesDefinitions) {
+            val repositories = rulesDefinitions.map { rulesDefinition ->
                 val repository = Repository(rulesDefinition.repositoryKey())
                 CustomAnnotationBasedRulesDefinition.load(
                     repository, "plsqlopen",
@@ -123,6 +121,16 @@ class Main(private val args: Arguments) {
                 )
 
                 activeRules.addRepository(repository)
+                repository
+            }
+
+            // Resolve all configured template references only after every built-in and
+            // plugin repository has been registered.
+            activeRules.validateConfiguration()
+
+            val checkList = mutableListOf<PlSqlVisitor>()
+
+            for ((rulesDefinition, repository) in rulesDefinitions.zip(repositories)) {
 
                 val checks = ZpaChecks(activeRules, repository.key, ruleMetadataLoader)
                     .addAnnotatedChecks(rulesDefinition.checkClasses().toList())
