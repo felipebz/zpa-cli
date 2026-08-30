@@ -37,6 +37,10 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
+tasks.test {
+    useJUnitPlatform()
+}
+
 application {
     mainClass.set("br.com.felipezorzo.zpa.cli.MainKt")
 }
