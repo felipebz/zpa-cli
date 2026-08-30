@@ -1,6 +1,7 @@
 package br.com.felipezorzo.zpa.cli.config
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
@@ -45,6 +46,7 @@ enum class RuleLevel {
     INFO
 }
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 class RuleOptions {
     var level: RuleLevel = RuleLevel.ON
     var parameters: Map<String, String> = emptyMap()
@@ -71,7 +73,7 @@ class RuleCategorySerializer : JsonSerializer<RuleConfiguration>() {
     override fun serialize(value: RuleConfiguration, gen: JsonGenerator, serializers: SerializerProvider) {
         val mapper = jacksonObjectMapper()
 
-        if (value.options.parameters.isEmpty()) {
+        if (value.options.parameters.isEmpty() && value.options.templateRuleKey == null) {
             gen.writeString(value.options.level.toString())
         } else {
             gen.writeTree(mapper.valueToTree(value.options))
