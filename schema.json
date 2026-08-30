@@ -2,6 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$defs": {
         "BaseRuleCategory": {
+            "description": "Whether rules activated by default are included.",
             "type": "string",
             "enum": [
                 "default",
@@ -9,6 +10,7 @@
             ]
         },
         "RuleLevel": {
+            "description": "The configured severity or activation state of a rule instance.",
             "type": "string",
             "enum": [
                 "on",
@@ -21,17 +23,21 @@
             ]
         },
         "RuleOptions": {
+            "description": "Configuration for one rule instance.",
             "type": "object",
             "properties": {
                 "level": {
+                    "description": "The severity or activation state for this rule instance.",
                     "$ref": "#/$defs/RuleLevel"
                 },
                 "parameters": {
+                    "description": "Parameter values passed to the rule implementation.",
                     "additionalProperties": {
                         "type": "string"
                     }
                 },
                 "templateRuleKey": {
+                    "description": "Optional rule implementation/template key, qualified as repository:rule when needed.",
                     "type": "string"
                 }
             }
@@ -40,9 +46,11 @@
     "type": "object",
     "properties": {
         "base": {
+            "description": "The base set of rules to activate.",
             "$ref": "#/$defs/BaseRuleCategory"
         },
         "rules": {
+            "description": "Configured rule instances keyed by their user-facing rule identity.",
             "additionalProperties": {
                 "oneOf": [
                     {
