@@ -23,11 +23,27 @@ import com.felipebz.zpa.rules.RuleKey
 
 object RuleKeyParser {
     fun parse(key: String): RuleKey {
-        val parts = key.split(":", limit = 2)
-        return if (parts.size == 2) {
-            RuleKey(parts[0], parts[1])
-        } else {
-            RuleKey("", parts[0])
+        if (key.isBlank() || key != key.trim() || key.count { it == ':' } > 1) {
+            throw invalidKey(key)
         }
+
+        val separator = key.indexOf(':')
+        if (separator == -1) {
+            return RuleKey("", key)
+        }
+
+        val repository = key.substring(0, separator)
+        val rule = key.substring(separator + 1)
+        if (repository.isBlank() || rule.isBlank()) {
+            throw invalidKey(key)
+        }
+
+        return RuleKey(repository, rule)
+    }
+
+    private fun invalidKey(key: String): IllegalArgumentException {
+        return IllegalArgumentException(
+            "Invalid rule key '$key'. Expected 'rule' or 'repository:rule'."
+        )
     }
 }
