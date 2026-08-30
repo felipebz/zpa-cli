@@ -1,4 +1,4 @@
-FROM bellsoft/liberica-runtime-container:jre-25.0.4_9-slim-musl@sha256:5690a706aa7cfb81891b1ebb3df425d6af106f55ed7c36dfa74f917ffb325e96
+FROM bellsoft/liberica-runtime-container:jre-25.0.4_9-slim-musl@sha256:ad7fe1f34797e1ba3fc0451ec19f91d66e830c21de4e4d93cda14f15af36c489
 
 RUN addgroup -S -g 1001 zpa-cli \
  && adduser -S -D -u 1001 -G zpa-cli -h /home/zpa-cli zpa-cli
