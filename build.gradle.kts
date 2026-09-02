@@ -77,28 +77,28 @@ publishing {
 data class Jdk(val arch: String, val os: String, val extension: String, val checksum: String, val platform: String = os)
 
 val baseJdkUrl = "https://download.bell-sw.com/java"
-val jdkBuild = "25+37"
+val jdkBuild = "25.0.4.1+1"
 val jdkVersion = jdkBuild.split('.', '+').first()
 val jdksToBuild = listOf(
     Jdk(
         arch = "amd64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "227e712de039721f59b69a18e5f7f3eaffb4ee1d"
+        checksum = "4fd81f4fb5cbf77006a3973aaf110f8d7968f8dd"
     ),
 
     Jdk(
         arch = "aarch64",
         os = "linux",
         extension = "tar.gz",
-        checksum = "eb4ef3e14fdbec3923dcbb66b7e94a9d9f2233ac"
+        checksum = "bf7f3596ed67f60b55b0c7f10b99b14493c535db"
     ),
 
     Jdk(
         arch = "amd64",
         os = "macos",
         extension = "tar.gz",
-        checksum = "8c7382ddba61ecda4d8e8140adfc12672e3be9a1",
+        checksum = "d727bb63bee69f1a01618b45b4a9852570829447",
         platform = "osx"
     ),
 
@@ -106,7 +106,7 @@ val jdksToBuild = listOf(
         arch = "aarch64",
         os = "macos",
         extension = "tar.gz",
-        checksum = "ea5b2adf6d597708aeec750e4a26ed277520df21",
+        checksum = "48b4888e440ee82ea6f023dde840e3dcac395609",
         platform = "osx"
     ),
 
@@ -114,14 +114,14 @@ val jdksToBuild = listOf(
         arch = "amd64",
         os = "windows",
         extension = "zip",
-        checksum = "7a62e1df0da604723115acfb3240a79cd1261771"
+        checksum = "841be12d9058794e067d206f4cd36a4056d4ca3a"
     ),
 
     Jdk(
         arch = "x64-musl",
         os = "linux",
         extension = "tar.gz",
-        checksum = "52c62204a06c73c91147d34b1319858f2b5e1fc8",
+        checksum = "e9ee84bdaacf42b2378fa8b8f4151f864ebc5b23",
         platform = "linux_musl"
     ),
 )
