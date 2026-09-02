@@ -1,8 +1,8 @@
 ## Highlights
 
-## ZPA 4.0.0
+## ZPA 4.1.0
 
-This release includes the [ZPA 4.0.0](https://github.com/felipebz/zpa/releases/tag/4.0.0).
+This release includes the [ZPA 4.1.0](https://github.com/felipebz/zpa/releases/tag/4.1.0).
 
 Make sure to build your custom plugins with this version of ZPA before using them in ZPA CLI.
 
@@ -12,7 +12,7 @@ Make sure to build your custom plugins with this version of ZPA before using the
 
 This distribution requires an external Java runtime.
 
-* {{#f_release_download_url}}zpa-cli-{{projectVersion}}.zip{{/f_release_download_url}} (requires Java 17+)
+* {{#f_release_download_url}}zpa-cli-{{projectVersion}}.zip{{/f_release_download_url}} (requires Java 21+)
 
 ### ☕️ Bundled Java Runtimes
 
