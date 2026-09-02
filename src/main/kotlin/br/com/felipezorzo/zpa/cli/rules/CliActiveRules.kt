@@ -211,7 +211,7 @@ class CliActiveRules(val config: ConfigFile?) : ZpaActiveRules {
             scope = templateRule.scope
             severity = templateRule.severity
             status = templateRule.status
-            tags = templateRule.tags
+            tags = templateRule.tags.copyOf()
             htmlDescription = templateRule.htmlDescription
             isActivatedByDefault = templateRule.isActivatedByDefault
             // A synthetic rule is an instance of the template, not another template.
