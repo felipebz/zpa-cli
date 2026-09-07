@@ -16,6 +16,11 @@ import com.felipebz.zpa.api.PlSqlFile
 import com.felipebz.zpa.api.ZpaRulesDefinition
 import com.felipebz.zpa.api.checks.PlSqlVisitor
 import com.felipebz.zpa.metadata.FormsMetadata
+import com.felipebz.zpa.project.FileId
+import com.felipebz.zpa.project.ProjectAnalysisContext
+import com.felipebz.zpa.project.ProjectIndexPreparation
+import com.felipebz.zpa.project.ProjectSource
+import com.felipebz.zpa.project.ProjectSourceReader
 import com.felipebz.zpa.rules.Repository
 import com.felipebz.zpa.rules.RuleMetadataLoader
 import com.felipebz.zpa.rules.ZpaChecks
@@ -146,10 +151,18 @@ class Main(private val args: Arguments) {
 
             val metadata = FormsMetadata.loadFromFile(args.formsMetadata)
 
+            val projectAnalysisContext = prepareProjectAnalysisContext(files)
+
             val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
             progressReport.start(files.map { it.pathRelativeToBase }.toList())
 
-            val scanner = AstScanner(checkList, metadata, true, StandardCharsets.UTF_8)
+            val scanner = AstScanner(
+                checkList,
+                metadata,
+                true,
+                StandardCharsets.UTF_8,
+                projectAnalysisContext
+            )
 
             val issues = files.parallelStream().flatMap { file ->
                 val scannerResult = scanner.scanFile(file)
@@ -166,6 +179,15 @@ class Main(private val args: Arguments) {
         pluginManager.stopPlugins()
         pluginManager.unloadPlugins()
     }
+
+    private fun prepareProjectAnalysisContext(files: Collection<InputFile>): ProjectAnalysisContext =
+        ProjectAnalysisContext.prepared(
+            ProjectIndexPreparation().prepare(
+                files.map { file ->
+                    ProjectSource(FileId(file.pathRelativeToBase), ProjectSourceReader { file.contents() })
+                }
+            )
+        )
 
     private fun getActiveRules(): CliActiveRules {
         val config = if (args.configFile.isNotEmpty()) {
