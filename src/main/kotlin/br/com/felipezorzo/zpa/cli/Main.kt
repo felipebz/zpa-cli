@@ -165,7 +165,7 @@ class Main(private val args: Arguments) {
             )
 
             val issues = files.parallelStream().flatMap { file ->
-                val scannerResult = scanner.scanFile(file)
+                val scannerResult = scanner.scanFile(file, fileId = FileId(file.pathRelativeToBase))
                 progressReport.nextFile()
                 scannerResult.issues.stream()
             }.collect(Collectors.toList())
