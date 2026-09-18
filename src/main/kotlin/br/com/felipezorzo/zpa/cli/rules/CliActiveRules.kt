@@ -162,6 +162,12 @@ class CliActiveRules(val config: ConfigFile?) : ZpaActiveRules {
             for (repository in matchingRepositories) {
                 val normalizedInstanceKey = instanceRuleKey.rule
                 if (normalizedInstanceKey == templateRuleKey.rule) continue
+                if (repository.rule(normalizedInstanceKey) != null) {
+                    throw IllegalArgumentException(
+                        "Configured template rule instance '$configuredKey' conflicts with " +
+                            "existing rule '${repository.key}:$normalizedInstanceKey' in repository '${repository.key}'."
+                    )
+                }
 
                 val identity = repository.key to normalizedInstanceKey
                 val previousConfiguration = customRuleKeys.put(identity, configuredKey)

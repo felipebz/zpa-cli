@@ -116,6 +116,26 @@ class CliActiveRulesTest {
     }
 
     @Test
+    fun templateInstanceKeyConflictingWithExistingRuleFailsDuringValidation() {
+        val repository = repository("XPath").apply {
+            createRule("ExistingRule")
+        }
+        val config = ConfigFile(
+            base = BaseRuleCategory.NONE,
+            rules = mapOf("ExistingRule" to options(templateRuleKey = "XPath"))
+        )
+
+        val activeRules = CliActiveRules(config).addRepository(repository)
+        val exception = assertFailsWith<IllegalArgumentException> {
+            activeRules.validateConfiguration()
+        }
+
+        assertTrue(exception.message.orEmpty().contains("conflicts with existing rule"))
+        assertTrue(exception.message.orEmpty().contains("ExistingRule"))
+        assertTrue(exception.message.orEmpty().contains("zpa:ExistingRule"))
+    }
+
+    @Test
     fun defaultBaseKeepsTheOriginalDefaultRuleAlongsideItsConfiguredInstance() {
         val repository = repository("SomeRule").apply {
             rule("SomeRule")!!.isActivatedByDefault = true

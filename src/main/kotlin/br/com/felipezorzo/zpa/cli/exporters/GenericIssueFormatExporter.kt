@@ -5,6 +5,7 @@ import br.com.felipezorzo.zpa.cli.sqissue.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.felipebz.zpa.squid.ZpaIssue
 import java.io.File
+import java.nio.charset.StandardCharsets
 
 class GenericIssueFormatExporter(private val outputFile: String) : IssueExporter {
     override fun export(issues: List<ZpaIssue>) {
@@ -63,7 +64,7 @@ class GenericIssueFormatExporter(private val outputFile: String) : IssueExporter
         val generatedOutput = mapper.writeValueAsString(genericReport)
         val file = File(outputFile)
         file.parentFile?.mkdirs()
-        file.writeText(generatedOutput)
+        file.writeText(generatedOutput, StandardCharsets.UTF_8)
     }
 
     private fun createTextRange(startLine: Int, endLine: Int, startLineOffset: Int, endLineOffset: Int): TextRange {

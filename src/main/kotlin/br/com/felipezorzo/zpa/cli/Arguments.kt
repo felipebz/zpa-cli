@@ -20,4 +20,19 @@ class Arguments {
 
     @Parameter(names = ["--config"], description = "Config file")
     var configFile: String = ""
+
+    @Parameter(names = ["--files"], description = "Files to analyze", variableArity = true)
+    var files: List<String> = ArrayList()
+
+    @Parameter(names = ["--syntax-only"], description = "Perform syntax validation only")
+    var syntaxOnly: Boolean = false
+
+    @Parameter(names = ["--stdin-filename"], description = "Virtual filename when reading from stdin")
+    var stdinFilename: String = ""
+
+    @Parameter(names = ["--fail-on"], description = "Failure threshold for validation exit code (none, any, syntax, blocker, critical, major, minor, info)")
+    var failOn: String? = null
+
+    @Parameter(names = ["--help", "-h"], help = true, description = "Display help information")
+    var help: Boolean = false
 }
