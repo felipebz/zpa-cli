@@ -1,30 +1,58 @@
 name: Build
 
 on:
-  push:
-    branches:
-      - "*"
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 env:
-  TAG: felipebz/zpa-cli:nightly
+  IMAGE_NAME: felipebz/zpa-cli
 
 jobs:
   build:
-    name: Build and release
+    name: Build and verify
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build_image.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+      - name: Validate stable Release PR dependency version
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          property_from_text() {
+            local name=$1
+            sed -n "s/^${name}=//p"
+          }
+
+          base_version=$(git show "${BASE_SHA}:gradle.properties" | property_from_text version)
+          head_version=$(property_from_text version < gradle.properties)
+          if [[ ${base_version} != "${head_version}" && ${head_version} =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            zpa_version=$(property_from_text zpaVersion < gradle.properties)
+            [[ ${zpa_version} =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+              printf 'Stable Release PR requires an independent stable zpaVersion, got %s\n' "${zpa_version}" >&2
+              exit 1
+            }
+          fi
+
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6
         with:
           distribution: liberica
-          java-version: |
-            25
+          java-version: '25'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
@@ -32,49 +60,100 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build --refresh-dependencies
 
-      - name: Assemble
+      - name: Assemble distributions
         run: ./gradlew copyJdksToCache jreleaserAssemble
+
+      - name: Verify distributions
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^version=//p' gradle.properties)
+          jlink_dir=build/jreleaser/assemble/zpa-cli/jlink
+          expected=(
+            "build/distributions/zpa-cli-${version}.zip"
+            "build/distributions/zpa-cli-${version}.tar"
+            "${jlink_dir}/zpa-cli-${version}-osx-x86_64.tar.gz"
+            "${jlink_dir}/zpa-cli-${version}-osx-aarch_64.tar.gz"
+            "${jlink_dir}/zpa-cli-${version}-linux-x86_64.tar.gz"
+            "${jlink_dir}/zpa-cli-${version}-linux-aarch_64.tar.gz"
+            "${jlink_dir}/zpa-cli-${version}-linux_musl-x86_64.tar.gz"
+            "${jlink_dir}/zpa-cli-${version}-windows-x86_64.zip"
+          )
+          for file in "${expected[@]}"; do
+            [[ -f ${file} ]] || {
+              printf 'Expected distribution is missing: %s\n' "${file}" >&2
+              exit 1
+            }
+          done
+          [[ ! -e "${jlink_dir}/zpa-cli-${version}-windows-x86_64.tar.gz" ]] || {
+            printf 'Unexpected Windows TAR.GZ exists\n' >&2
+            exit 1
+          }
+          for target in \
+            osx-x86_64 \
+            osx-aarch_64 \
+            linux-x86_64 \
+            linux-aarch_64 \
+            linux_musl-x86_64; do
+            [[ ! -e "${jlink_dir}/zpa-cli-${version}-${target}.zip" ]] || {
+              printf 'Unexpected ZIP exists for %s\n' "${target}" >&2
+              exit 1
+            }
+          done
+          printf '%s\n' "${expected[@]}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
 
+      - name: Build local Docker image
+        if: github.event_name == 'pull_request'
+        run: docker build --tag zpa-cli:local .
+
       - name: Login to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
-        with:
-          context: .
-          load: true
-          tags: ${{ env.TAG }}
-
-      - if: github.ref == 'refs/heads/main'
-        name: Push docker image to Docker Hub
+      - name: Build digest-only Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: build_image
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64/v8
-          push: true
-          tags: ${{ env.TAG }}
+          outputs: type=image,name=${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
 
-      - if: github.ref == 'refs/heads/main'
-        name: Release artifacts
-        run: ./gradlew jreleaserFullRelease
+      - name: Validate Docker digest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DIGEST: ${{ steps.build_image.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ ${DIGEST} =~ ^sha256:[0-9a-f]{64}$ ]] || {
+            printf 'Buildx did not return a valid digest: %s\n' "${DIGEST}" >&2
+            exit 1
+          }
 
   demo:
     name: Analyze demo project on SonarCloud
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main'
+    outputs:
+      digest: ${{ needs.build.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
           repository: utPLSQL/utPLSQL
+          path: utplsql
 
       - name: Login to Docker Hub
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
@@ -83,17 +162,13 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Analyze with zpa-cli
-        run: |
-          docker run --rm \
-            -v $PWD:/src \
-            felipebz/zpa-cli:nightly \
-            --sources . \
-            --output-file zpa-issues.json \
-            --output-format sq-generic-issue-import
+        working-directory: utplsql
+        run: bash "${GITHUB_WORKSPACE}/.github/scripts/run-demo.sh" "${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}" "${GITHUB_WORKSPACE}/utplsql"
 
       - name: Analyze with SonarCloud
         uses: sonarsource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8
         with:
+          projectBaseDir: utplsql
           args: >
             -Dsonar.projectKey=utPLSQL-zpa-demo
             -Dsonar.organization=felipebz-github
@@ -106,3 +181,28 @@ jobs:
             -Dsonar.tests=
         env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+
+  promote-development:
+    name: Promote validated development digest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: demo
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+
+      - name: Promote edge
+        run: bash .github/scripts/promote-digest.sh "${{ env.IMAGE_NAME }}" "${{ needs.demo.outputs.digest }}" "${{ env.IMAGE_NAME }}:edge"
+
+      - name: Promote nightly compatibility alias
+        run: bash .github/scripts/promote-digest.sh "${{ env.IMAGE_NAME }}" "${{ needs.demo.outputs.digest }}" "${{ env.IMAGE_NAME }}:nightly"

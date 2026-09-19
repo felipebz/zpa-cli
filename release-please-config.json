@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/v17.6.0/schemas/config.json",
+  "draft": true,
+  "force-tag-creation": true,
+  "packages": {
+    ".": {
+      "release-type": "java",
+      "package-name": "zpa-cli",
+      "skip-snapshot": true,
+      "extra-files": [
+        "gradle.properties"
+      ],
+      "skip-changelog": true,
+      "include-component-in-tag": false,
+      "include-v-in-tag": false
+    }
+  }
+}

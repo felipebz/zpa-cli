@@ -1,15 +1,17 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jreleaser.model.Archive
 import org.jreleaser.model.api.common.ArchiveOptions
 
 group = "com.felipebz.zpa"
-version = "3.2.0-SNAPSHOT"
+version = providers.gradleProperty("version").get()
+val zpaVersion = providers.gradleProperty("zpaVersion").get()
 
 plugins {
     `maven-publish`
     kotlin("jvm") version "2.4.20"
     application
     id("org.jreleaser") version "1.26.0"
-    id("org.jreleaser.jdks") version "1.25.0"
+    id("org.jreleaser.jdks") version "1.26.0"
 }
 
 java {
@@ -28,8 +30,8 @@ repositories {
 
 dependencies {
     implementation("org.jcommander:jcommander:3.0")
-    implementation("com.felipebz.zpa:zpa-core:4.2.0-SNAPSHOT")
-    implementation("com.felipebz.zpa:zpa-checks:4.2.0-SNAPSHOT")
+    implementation("com.felipebz.zpa:zpa-core:$zpaVersion")
+    implementation("com.felipebz.zpa:zpa-checks:$zpaVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.2")
     implementation("org.pf4j:pf4j:3.15.1")
     implementation("org.slf4j:slf4j-jdk14:2.0.19")
@@ -146,6 +148,7 @@ jreleaser {
                 stereotype.set(org.jreleaser.model.Stereotype.CLI)
                 imageName.set("{{distributionName}}-{{projectVersion}}")
                 moduleNames.set(listOf("java.logging", "java.xml"))
+                formats.set(setOf(Archive.Format.ZIP, Archive.Format.TAR_GZ))
                 jdeps {
                     multiRelease.set("base")
                     ignoreMissingDeps.set(true)
@@ -166,7 +169,8 @@ jreleaser {
                         val additionalDir = if (it.os == "macos") ".jdk" else ""
                         path.set(file("build/jdks/${jreleaserOs}_${dirArch}/jdk-$jdkVersion$additionalDir"))
                         platform.set("$jreleaserOs-$jreleaseArch")
-                        extraProperties.put("archiveFormat", if (jreleaserOs == "windows") "ZIP" else "TAR_GZ")
+                        extraProperties.put("skipTargz", jreleaserOs == "windows")
+                        extraProperties.put("skipZip", jreleaserOs != "windows")
                         options {
                             longFileMode.set(ArchiveOptions.TarMode.POSIX)
                         }
@@ -192,13 +196,15 @@ jreleaser {
     }
     release {
         github {
-            overwrite.set(true)
             tagName.set("{{projectVersion}}")
-            draft.set(true)
+            skipTag.set(true)
+            skipRelease.set(true)
+            token.set("changelog-only") // JReleaser validates the GitHub token even in changelog-only mode.
             changelog {
                 formatted.set(org.jreleaser.model.Active.ALWAYS)
                 preset.set("conventional-commits")
                 contentTemplate.set(file("template/changelog.tpl"))
+                extraProperties.put("zpaVersion", zpaVersion)
                 contributors {
                     enabled.set(false)
                 }
