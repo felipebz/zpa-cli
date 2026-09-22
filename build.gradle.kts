@@ -33,7 +33,7 @@ dependencies {
     implementation("com.felipebz.zpa:zpa-core:$zpaVersion")
     implementation("com.felipebz.zpa:zpa-checks:$zpaVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.2")
-    implementation("org.pf4j:pf4j:3.15.1")
+    implementation("org.pf4j:pf4j:3.16.0")
     implementation("org.slf4j:slf4j-jdk14:2.0.19")
     implementation("me.lucko:jar-relocator:1.7")
     testImplementation(kotlin("test"))
