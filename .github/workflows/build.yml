@@ -166,7 +166,7 @@ jobs:
         run: bash "${GITHUB_WORKSPACE}/.github/scripts/run-demo.sh" "${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}" "${GITHUB_WORKSPACE}/utplsql"
 
       - name: Analyze with SonarCloud
-        uses: sonarsource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8
+        uses: sonarsource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8
         with:
           projectBaseDir: utplsql
           args: >
