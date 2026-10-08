@@ -26,6 +26,9 @@ jobs:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
+      - name: Test release changelog verification
+        run: bash .github/scripts/test-verify-release-changelog.sh
+
       - name: Validate stable Release PR dependency version
         if: github.event_name == 'pull_request'
         shell: bash

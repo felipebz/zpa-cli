@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing stable release tag (X.Y.Z, no "v" prefix) whose empty draft release should be published. Run from main.'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -16,6 +22,8 @@ env:
 jobs:
   release_please:
     name: Create or update Release Please draft
+    # A manual recovery must not run Release Please (no PRs or tags).
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
@@ -32,33 +40,71 @@ jobs:
 
   publish:
     name: Validate and publish stable release
-    if: needs.release_please.outputs.release_created == 'true'
     needs: release_please
+    # release_please is skipped on manual dispatch, which would skip this job under the
+    # implicit success(); !cancelled() lifts that and the explicit conditions below decide.
+    # The push path requires release_please to have succeeded and created a release, so a
+    # failed job is never trusted even if it exposed outputs.
+    if: ${{ !cancelled() && ((github.event_name == 'push' && needs.release_please.result == 'success' && needs.release_please.outputs.release_created == 'true') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: release-${{ needs.release_please.outputs.version || inputs.release_tag }}
+      cancel-in-progress: false
     outputs:
       digest: ${{ steps.build_image.outputs.digest }}
-      release_version: ${{ needs.release_please.outputs.version }}
+      release_version: ${{ needs.release_please.outputs.version || inputs.release_tag }}
     env:
-      RELEASE_VERSION: ${{ needs.release_please.outputs.version }}
-      RELEASE_TAG: ${{ needs.release_please.outputs.tag_name }}
+      RELEASE_VERSION: ${{ needs.release_please.outputs.version || inputs.release_tag }}
+      RELEASE_TAG: ${{ needs.release_please.outputs.tag_name || inputs.release_tag }}
     steps:
+      # Automatic: the Release Please commit. Manual recovery: the existing tag, never main.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ needs.release_please.outputs.sha }}
+          ref: ${{ needs.release_please.outputs.sha || format('refs/tags/{0}', inputs.release_tag) }}
           fetch-depth: 0
 
-      - name: Verify exact Release Please commit
+      - name: Verify exact release commit
         env:
           RELEASE_SHA: ${{ needs.release_please.outputs.sha }}
         shell: bash
         run: |
           set -euo pipefail
+          if [[ ${GITHUB_EVENT_NAME} == workflow_dispatch ]]; then
+            [[ ${RELEASE_TAG} =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+              printf 'Release tag must be an unprefixed stable X.Y.Z: %s\n' "${RELEASE_TAG}" >&2
+              exit 1
+            }
+            RELEASE_SHA=$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")
+            [[ $(git log -1 --format=%s HEAD) == "chore(main): release ${RELEASE_TAG}" ]] || {
+              printf 'Tag %s is not a Release Please release commit\n' "${RELEASE_TAG}" >&2
+              exit 1
+            }
+            git merge-base --is-ancestor HEAD origin/main || {
+              printf 'Tag %s is not in the history of main\n' "${RELEASE_TAG}" >&2
+              exit 1
+            }
+          fi
           [[ ${RELEASE_SHA} =~ ^[0-9a-f]{40}$ ]] || {
-            printf 'Release Please returned an invalid commit SHA: %s\n' "${RELEASE_SHA}" >&2
+            printf 'Invalid release commit SHA: %s\n' "${RELEASE_SHA}" >&2
             exit 1
           }
           [[ $(git rev-parse HEAD) == "${RELEASE_SHA}" ]] || {
-            printf 'Checked out commit does not match Release Please SHA\n' >&2
+            printf 'Checked out commit does not match the release SHA\n' >&2
+            exit 1
+          }
+
+      - name: Verify existing release draft is empty
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The by-tag endpoint hides drafts, so list releases instead.
+          releases=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            | jq -s --arg tag "${RELEASE_TAG}" '[.[][] | select(.tag_name == $tag)]')
+          [[ $(jq -r 'length == 1 and .[0].draft and (.[0].assets | length == 0)' <<< "${releases}") == true ]] || {
+            printf 'Expected exactly one draft release for %s with no assets; remove partial assets manually: %s\n' "${RELEASE_TAG}" "$(jq -c 'map({draft, assets: (.assets | length)})' <<< "${releases}")" >&2
             exit 1
           }
 
@@ -150,55 +196,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          changelog_file=build/jreleaser/release/CHANGELOG.md
-          [[ -s ${changelog_file} ]] || {
-            printf 'Generated changelog is missing or empty\n' >&2
-            exit 1
-          }
-          changelog=$(<"${changelog_file}")
-          zpa_version=$(sed -n 's/^zpaVersion=//p' gradle.properties)
-          [[ ${changelog} == *"ZPA ${zpa_version}"* ]] || {
-            printf 'Changelog does not contain zpaVersion %s\n' "${zpa_version}" >&2
-            exit 1
-          }
-          [[ ${changelog} == *"https://github.com/felipebz/zpa/releases/tag/${zpa_version}"* ]] || {
-            printf 'Changelog does not contain the rendered ZPA release link\n' >&2
-            exit 1
-          }
-          assets=(
-            "zpa-cli-${RELEASE_VERSION}.zip"
-            "zpa-cli-${RELEASE_VERSION}.tar"
-            "zpa-cli-${RELEASE_VERSION}-osx-x86_64.tar.gz"
-            "zpa-cli-${RELEASE_VERSION}-osx-aarch_64.tar.gz"
-            "zpa-cli-${RELEASE_VERSION}-linux-x86_64.tar.gz"
-            "zpa-cli-${RELEASE_VERSION}-linux-aarch_64.tar.gz"
-            "zpa-cli-${RELEASE_VERSION}-linux_musl-x86_64.tar.gz"
-            "zpa-cli-${RELEASE_VERSION}-windows-x86_64.zip"
-          )
-          for asset in "${assets[@]}"; do
-            [[ ${changelog} == *"${asset}"* ]] || {
-              printf 'Changelog does not contain asset filename %s\n' "${asset}" >&2
-              exit 1
-            }
-            url="https://github.com/felipebz/zpa-cli/releases/download/${RELEASE_VERSION}/${asset}"
-            [[ ${changelog} == *"${url}"* ]] || {
-              printf 'Changelog does not contain asset URL %s\n' "${url}" >&2
-              exit 1
-            }
-          done
-
-          previous_tag=$(git describe --tags --abbrev=0 HEAD^)
-          has_conventional=false
-          while IFS= read -r subject; do
-            if [[ ${subject} =~ ^[a-z]+(\([^)]+\))?!?:[[:space:]]+ ]]; then
-              has_conventional=true
-              break
-            fi
-          done < <(git log --format=%s "${previous_tag}..HEAD")
-          [[ ${has_conventional} == true ]] || {
-            printf 'No Conventional Commit subject found between %s and HEAD\n' "${previous_tag}" >&2
-            exit 1
-          }
+          # Use the script from the workflow commit: a recovered tag predates the fixed one.
+          git show "${GITHUB_SHA}:.github/scripts/verify-release-changelog.sh" > "${RUNNER_TEMP}/verify-release-changelog.sh"
+          bash "${RUNNER_TEMP}/verify-release-changelog.sh"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
