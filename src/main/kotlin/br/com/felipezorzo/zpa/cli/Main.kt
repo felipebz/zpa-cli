@@ -189,6 +189,7 @@ class Main(private val args: Arguments) {
                     }
                 }
 
+                LOG.info("Loading source files...")
                 val metadata = if (args.syntaxOnly) null else FormsMetadata.loadFromFile(args.formsMetadata)
 
                 val targetFiles: List<InputFile>
