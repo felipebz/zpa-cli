@@ -8,7 +8,7 @@ val zpaVersion = providers.gradleProperty("zpaVersion").get()
 
 plugins {
     `maven-publish`
-    kotlin("jvm") version "2.4.20"
+    kotlin("jvm") version "2.4.21"
     application
     id("org.jreleaser") version "1.26.0"
     id("org.jreleaser.jdks") version "1.26.0"
