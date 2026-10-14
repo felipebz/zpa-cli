@@ -8,22 +8,25 @@ import br.com.felipezorzo.zpa.cli.exporters.ConsoleExporter
 import br.com.felipezorzo.zpa.cli.exporters.GenericIssueFormatExporter
 import br.com.felipezorzo.zpa.cli.exporters.IssueExporter
 import br.com.felipezorzo.zpa.cli.exporters.JsonExporter
+import br.com.felipezorzo.zpa.cli.oracle.OracleMetadataLoader
+import br.com.felipezorzo.zpa.cli.oracle.OracleSettings
 import br.com.felipezorzo.zpa.cli.plugin.PluginManager
 import br.com.felipezorzo.zpa.cli.rules.CliActiveRules
+import br.com.felipezorzo.zpa.cli.typereport.TypeReport
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.felipebz.zpa.CustomAnnotationBasedRulesDefinition
-import com.felipebz.zpa.api.PlSqlFile
 import com.felipebz.zpa.api.ZpaRulesDefinition
+import com.felipebz.zpa.api.annotations.ZpaExperimentalApi
 import com.felipebz.zpa.api.checks.PlSqlVisitor
+import com.felipebz.zpa.api.project.ProjectExternalContext
+import com.felipebz.zpa.api.project.ProjectExternalMetadata
+import com.felipebz.zpa.api.project.ProjectIdentifier
 import com.felipebz.zpa.checks.ParsingErrorCheck
 import com.felipebz.zpa.metadata.FormsMetadata
-import com.felipebz.zpa.project.FileId
-import com.felipebz.zpa.project.ProjectAnalysisContext
-import com.felipebz.zpa.project.ProjectIndexPreparation
-import com.felipebz.zpa.project.ProjectSource
-import com.felipebz.zpa.project.ProjectSourceReader
+import com.felipebz.zpa.oracle.metadata.OracleMetadataResult
+import com.felipebz.zpa.project.*
 import com.felipebz.zpa.rules.Repository
 import com.felipebz.zpa.rules.RuleMetadataLoader
 import com.felipebz.zpa.rules.ZpaChecks
@@ -42,18 +45,14 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import java.util.stream.Collectors
-import kotlin.io.path.absolute
-import kotlin.io.path.exists
-import kotlin.io.path.extension
-import kotlin.io.path.invariantSeparatorsPathString
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
+import kotlin.io.path.*
 import kotlin.system.measureTimeMillis
 
 const val CONSOLE = "console"
 const val GENERIC_ISSUE_FORMAT = "sq-generic-issue-import"
 const val JSON = "json"
-class Main(private val args: Arguments) {
+@OptIn(ZpaExperimentalApi::class)
+class Main(private val args: Arguments, private val environment: (String) -> String? = System::getenv) {
 
     val mapper = jacksonObjectMapper()
 
@@ -92,15 +91,21 @@ class Main(private val args: Arguments) {
             throw CliValidationException("Standard input ('--files -') is currently supported only with --syntax-only. Project-aware semantic analysis requires project-overlay support which is deferred.")
         }
 
+        // Database settings are validated before anything runs; no connection is made unless --oracle-url is given.
+        val oracleSettings = OracleSettings.from(args, environment)
+        val compilationSchema = OracleSettings.compilationSchema(args)
+        if (args.typeReport.isNotEmpty() && args.syntaxOnly) {
+            throw CliValidationException("--type-report cannot be used with --syntax-only")
+        }
+        if (args.typeReport.isNotEmpty() && args.outputFile.isNotEmpty() &&
+            File(args.typeReport).absoluteFile.normalize() == File(args.outputFile).absoluteFile.normalize()) {
+            throw CliValidationException("--type-report must be a different file than --output-file")
+        }
+
         var pluginManager: PluginManager? = null
+        val appHome = applicationHome()
 
         if (!args.syntaxOnly) {
-            val codePath = Path.of(Main::class.java.protectionDomain.codeSource.location.toURI())
-            val appHome = if (codePath.extension == "jar" && (codePath.parent.name == "lib" || codePath.parent.name == "jars")) {
-                codePath.parent.parent.absolute()
-            } else {
-                Path.of(".")
-            }
 
             val tempDir = Files.createTempDirectory("zpa-cli")
             tempDir.toFile().deleteOnExit()
@@ -194,9 +199,11 @@ class Main(private val args: Arguments) {
 
                 val targetFiles: List<InputFile>
                 val projectAnalysisContext: ProjectAnalysisContext
+                val acquisition: OracleMetadataResult?
 
                 if (args.syntaxOnly) {
                     projectAnalysisContext = ProjectAnalysisContext.NOT_PREPARED
+                    acquisition = null
                     targetFiles = sourceSelection.resolveSyntaxOnlyTargets(
                         requestedFiles = args.files,
                         stdinFilename = args.stdinFilename
@@ -207,7 +214,9 @@ class Main(private val args: Arguments) {
                         projectSources = projectSources,
                         requestedFiles = args.files
                     )
-                    projectAnalysisContext = prepareProjectAnalysisContext(projectSources)
+                    // Acquired once, before scanning; scanner workers only see the detached, immutable metadata.
+                    acquisition = oracleSettings?.let { OracleMetadataLoader.load(it, appHome.resolve("drivers")) }
+                    projectAnalysisContext = prepareProjectAnalysisContext(projectSources, acquisition?.metadata, compilationSchema)
                 }
 
                 val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
@@ -254,6 +263,14 @@ class Main(private val args: Arguments) {
                 }
 
                 issueExporter.export(issues)
+
+                if (args.typeReport.isNotEmpty()) {
+                    val report = TypeReport.build(
+                        projectAnalysisContext.createSnapshot(), projectAnalysisContext.externalContext, acquisition
+                    )
+                    TypeReport.write(report, File(args.typeReport))
+                    LOG.info("Type report: ${report.references.size} references written to ${args.typeReport} ${report.summary}")
+                }
             }
 
             LOG.info("Time elapsed: $ellapsedTime ms")
@@ -275,14 +292,15 @@ class Main(private val args: Arguments) {
         return if (validationFailed) 1 else 0
     }
 
-    private fun prepareProjectAnalysisContext(files: Collection<InputFile>): ProjectAnalysisContext =
-        ProjectAnalysisContext.prepared(
-            ProjectIndexPreparation().prepare(
-                files.map { file ->
-                    ProjectSource(FileId(file.pathRelativeToBase), ProjectSourceReader { file.contents() })
-                }
-            )
-        )
+    private fun applicationHome(): Path {
+        val codePath = Path.of(Main::class.java.protectionDomain.codeSource.location.toURI())
+        return if (codePath.extension == "jar" && (codePath.parent.name == "lib" || codePath.parent.name == "jars")) {
+            codePath.parent.parent.absolute()
+        } else {
+            Path.of(".")
+        }
+    }
+
 
     private fun loadConfigFile(): ConfigFile {
         if (args.configFile.isEmpty()) {
@@ -336,10 +354,33 @@ class Main(private val args: Arguments) {
 
     companion object {
         val LOG = Loggers.getLogger(Main::class.java)
+
+        /**
+         * Prepares the project index once from every project source and attaches the external context (Oracle
+         * metadata and the default compilation schema) when either is configured; otherwise the context is the
+         * plain prepared project, exactly as without Oracle support.
+         */
+        fun prepareProjectAnalysisContext(
+            files: Collection<InputFile>,
+            metadata: ProjectExternalMetadata?,
+            compilationSchema: ProjectIdentifier?
+        ): ProjectAnalysisContext {
+            val prepared = ProjectAnalysisContext.prepared(
+                ProjectIndexPreparation().prepare(
+                    files.map { file ->
+                        ProjectSource(FileId(file.pathRelativeToBase), ProjectSourceReader { file.contents() })
+                    }
+                )
+            )
+            if (metadata == null && compilationSchema == null) return prepared
+            return prepared.withExternalContext(
+                ProjectExternalContext.of(metadata ?: ProjectExternalMetadata.none(), compilationSchema)
+            )
+        }
     }
 }
 
-fun execute(args: Array<String>): Int {
+fun execute(args: Array<String>, environment: (String) -> String? = System::getenv): Int {
     val arguments = Arguments()
     val cmd = JCommander.newBuilder()
         .addObject(arguments)
@@ -353,7 +394,7 @@ fun execute(args: Array<String>): Int {
             println(sb.toString())
             return 0
         }
-        Main(arguments).run()
+        Main(arguments, environment).run()
     } catch (exception: ParameterException) {
         System.err.println(exception.message)
         val sb = StringBuilder()
@@ -363,6 +404,9 @@ fun execute(args: Array<String>): Int {
     } catch (exception: CliValidationException) {
         System.err.println(exception.message)
         2
+    } catch (exception: CliExecutionException) {
+        System.err.println(exception.message)
+        3
     } catch (exception: Exception) {
         System.err.println("Execution failed: ${exception.message}")
         exception.printStackTrace(System.err)

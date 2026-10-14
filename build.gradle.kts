@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jreleaser.model.Archive
 import org.jreleaser.model.api.common.ArchiveOptions
 
@@ -32,6 +31,7 @@ dependencies {
     implementation("org.jcommander:jcommander:3.0")
     implementation("com.felipebz.zpa:zpa-core:$zpaVersion")
     implementation("com.felipebz.zpa:zpa-checks:$zpaVersion")
+    implementation("com.felipebz.zpa:zpa-oracle-metadata:$zpaVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.3")
     implementation("org.pf4j:pf4j:3.16.0")
     implementation("org.slf4j:slf4j-jdk14:2.0.20")
@@ -41,6 +41,27 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Database-backed tests: never part of `check`/`build`; they need an Oracle instance (see README.md).
+val oracleIntegrationTest by sourceSets.creating {
+    compileClasspath += sourceSets.main.get().output + configurations.testRuntimeClasspath.get()
+    runtimeClasspath += output + compileClasspath
+}
+
+dependencies {
+    "oracleIntegrationTestImplementation"(kotlin("test"))
+    // The Oracle JDBC driver is never a runtime dependency of the CLI: users supply it in the `drivers` directory.
+    "oracleIntegrationTestImplementation"("com.oracle.database.jdbc:ojdbc17:23.26.3.0.0")
+}
+
+val oracleIntegrationTestTask = tasks.register<Test>("oracleIntegrationTest") {
+    description = "Runs the Oracle database integration tests (requires ZPA_ORACLE_* environment variables)."
+    group = "verification"
+    testClassesDirs = oracleIntegrationTest.output.classesDirs
+    classpath = oracleIntegrationTest.runtimeClasspath
+    useJUnitPlatform()
+    outputs.upToDateWhen { false }
 }
 
 application {
@@ -147,7 +168,8 @@ jreleaser {
                 exported.set(true)
                 stereotype.set(org.jreleaser.model.Stereotype.CLI)
                 imageName.set("{{distributionName}}-{{projectVersion}}")
-                moduleNames.set(listOf("java.logging", "java.xml"))
+                // java.sql for metadata acquisition; the others are needed by the user-supplied Oracle JDBC driver (jdeps on ojdbc17).
+                moduleNames.set(listOf("java.logging", "java.xml", "java.sql", "java.naming", "java.management", "jdk.net", "jdk.security.jgss"))
                 formats.set(setOf(Archive.Format.ZIP, Archive.Format.TAR_GZ))
                 jdeps {
                     multiRelease.set("base")
@@ -189,6 +211,11 @@ jreleaser {
                 fileSet {
                     input = "src/dist/plugins"
                     output = "plugins"
+                    includes = listOf("*")
+                }
+                fileSet {
+                    input = "src/dist/drivers"
+                    output = "drivers"
                     includes = listOf("*")
                 }
             }

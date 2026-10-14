@@ -28,6 +28,8 @@ Currently, the zpa-cli supports these options:
 * `--config`: Path to the configuration file. The file format must comply with the [provided JSON schema](schema.json).
   You can refer to the example [zpa-config-example.json](zpa-config-example.json) for guidance. If the configuration
   file is not provided, only the rules marked as "activated by default" will be executed.
+* `--type-report`: Path of a JSON file to write the [Oracle type report](#oracle-database-metadata) to. It does not change the analysis output. Not available with `--syntax-only`.
+* `--oracle-url`, `--oracle-user`, `--oracle-password-env`, `--oracle-schemas`, `--oracle-relations`, `--compilation-schema`: optional [Oracle database metadata](#oracle-database-metadata) settings.
 
 ### Project context vs analysis targets
 
@@ -52,7 +54,40 @@ Currently, the zpa-cli supports these options:
 * `0`: analysis completed without an enabled validation failure (threshold not exceeded)
 * `1`: requested validation condition failed (findings met or exceeded the `--fail-on` threshold)
 * `2`: invalid invocation, command-line arguments, or target file error (e.g. nonexistent target file, target outside `--sources`, stdin used without `--syntax-only`)
-* `3`: internal execution failure
+* `3`: execution failure, including Oracle metadata acquisition failures (driver missing, connection refused, invalid credentials)
+
+### Oracle database metadata
+
+By default, zpa-cli never connects to a database. With `--oracle-url`, it reads table and view column metadata from an Oracle database once, before scanning, in a single read-only transaction, and closes the connection; the analysis uses only that detached snapshot.
+
+* `--oracle-url`: JDBC URL, e.g. `jdbc:oracle:thin:@//db.example.com:1521/FREEPDB1`. It must not contain credentials.
+* `--oracle-user`: database user.
+* `--oracle-password-env`: name of the environment variable holding the password (default `ZPA_ORACLE_PASSWORD`). The password is never accepted as an argument.
+* `--oracle-schemas`: comma-separated schemas to read completely (exact dictionary names, usually upper case). A schema is only treated as complete when it is the connected user's own schema; other schemas are read as far as the user can see them, and names not found there stay inconclusive.
+* `--oracle-relations`: comma-separated `SCHEMA.RELATION` names to read individually.
+* `--compilation-schema`: the schema in which analyzed units without an explicit owner compile (`CREATE PACKAGE pkg`). It is distinct from the schemas read: a unit written as `CREATE PACKAGE hr.pkg` always compiles in `HR`. Without it, unqualified units are reported as having no schema context.
+
+These options cannot be combined with `--syntax-only`. Errors never print the password or the URL.
+
+#### JDBC driver
+
+The Oracle JDBC driver is not bundled. Copy `ojdbc17.jar` (Maven Central `com.oracle.database.jdbc:ojdbc17`, tested with 23.26.3.0.0) to the `drivers` directory of the zpa-cli distribution. With the Docker image, mount it at `/opt/zpa-cli/drivers/ojdbc17.jar`.
+
+#### Type report
+
+`--type-report types.json` writes every `%TYPE`/`%ROWTYPE` reference in the project's package declarations (variables, constants, subtypes, record fields, collection elements, parameters and function returns) with:
+
+* `file`, `startLine` (1-based), `startColumn` (0-based), `declaration`, `kind`, `role`, `element` and the written `reference`;
+* `compilationSchema`: the schema used to read the reference;
+* `status`: `RESOLVED`, or an inconclusive status: `UNAVAILABLE` (no metadata), `SCHEMA_CONTEXT_MISSING`, `INCOMPLETE` (the metadata does not cover the name), `RELATION_NOT_FOUND` (no table or view of that name was read; Oracle may still resolve it, e.g. through a synonym), `COLUMN_NOT_FOUND`, `CAPTURE_NOT_EXCLUDED`, `AMBIGUOUS`, `CONFLICT`, `SOURCE_INCOMPLETE`, `NOT_EXTERNAL`, with a `note`;
+* for resolved `%TYPE`: `relation` and `type` (Oracle datatype, e.g. `NUMBER(10,2)`, `VARCHAR2(40 CHAR)`); for resolved `%ROWTYPE`: `rowFields` in column order (invisible columns excluded).
+
+The report covers all files under `--sources`, also when `--files` restricts the diagnosed files. Rules and their findings are unaffected.
+
+#### Integration tests
+
+`./gradlew oracleIntegrationTest` runs the CLI against a real Oracle database (never part of `build`). It creates and drops disposable users through an administrative account given by `ZPA_ORACLE_JDBC_URL`, `ZPA_ORACLE_ADMIN_USER` and `ZPA_ORACLE_ADMIN_PASSWORD`; the tests are skipped when they are unset.
+
 ### Examples
 
 Full project analysis:
@@ -78,6 +113,13 @@ zpa-cli --sources . --files src/packages/customer.pkb --syntax-only
 Stdin validation:
 ```sh
 cat generated.sql | zpa-cli --sources . --files - --stdin-filename src/packages/customer.pkb --syntax-only
+```
+
+Oracle type report:
+```sh
+export ZPA_ORACLE_PASSWORD=...   # read from the environment only
+zpa-cli --sources . --oracle-url jdbc:oracle:thin:@//db.example.com:1521/FREEPDB1 --oracle-user HR \
+  --oracle-schemas HR --compilation-schema HR --type-report zpa-types.json
 ```
 
 Running an analysis:

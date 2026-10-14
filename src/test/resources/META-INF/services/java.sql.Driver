@@ -1,0 +1,3 @@
+br.com.felipezorzo.zpa.cli.oracle.FailingTestDriver
+br.com.felipezorzo.zpa.cli.oracle.ThrowingLookupTestDriver
+br.com.felipezorzo.zpa.cli.oracle.MissingTestDriver

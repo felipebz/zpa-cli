@@ -33,6 +33,27 @@ class Arguments {
     @Parameter(names = ["--fail-on"], description = "Failure threshold for validation exit code (none, any, syntax, blocker, critical, major, minor, info)")
     var failOn: String? = null
 
+    @Parameter(names = ["--oracle-url"], description = "JDBC URL of an Oracle database to read schema metadata from (enables Oracle metadata acquisition)")
+    var oracleUrl: String = ""
+
+    @Parameter(names = ["--oracle-user"], description = "Database user for --oracle-url")
+    var oracleUser: String = ""
+
+    @Parameter(names = ["--oracle-password-env"], description = "Name of the environment variable holding the database password")
+    var oraclePasswordEnv: String = "ZPA_ORACLE_PASSWORD"
+
+    @Parameter(names = ["--oracle-schemas"], description = "Comma-separated schemas to read completely (exact dictionary names, e.g. HR)")
+    var oracleSchemas: String = ""
+
+    @Parameter(names = ["--oracle-relations"], description = "Comma-separated SCHEMA.RELATION names to read individually (exact dictionary names)")
+    var oracleRelations: String = ""
+
+    @Parameter(names = ["--compilation-schema"], description = "Schema in which analyzed units without an explicit schema compile (exact dictionary name)")
+    var compilationSchema: String = ""
+
+    @Parameter(names = ["--type-report"], description = "Write a JSON report of %TYPE/%ROWTYPE references in package declarations to this file")
+    var typeReport: String = ""
+
     @Parameter(names = ["--help", "-h"], help = true, description = "Display help information")
     var help: Boolean = false
 }
