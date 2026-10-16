@@ -31,6 +31,8 @@ import com.felipebz.zpa.rules.Repository
 import com.felipebz.zpa.rules.RuleMetadataLoader
 import com.felipebz.zpa.rules.ZpaChecks
 import com.felipebz.zpa.squid.AstScanner
+import com.felipebz.zpa.squid.ConditionalCompilationSettings
+import com.felipebz.zpa.squid.PlSqlConfiguration
 import com.felipebz.zpa.squid.ProgressReport
 import com.felipebz.zpa.squid.ZpaIssue
 import com.felipebz.zpa.utils.log.Loggers
@@ -94,6 +96,9 @@ class Main(private val args: Arguments, private val environment: (String) -> Str
         // Database settings are validated before anything runs; no connection is made unless --oracle-url is given.
         val oracleSettings = OracleSettings.from(args, environment)
         val compilationSchema = OracleSettings.compilationSchema(args)
+        // Applies in every mode (it changes what parses); the project index and the AST get the same value.
+        val conditionalCompilation = conditionalCompilationSettings(args)
+        if (conditionalCompilation.isActive) LOG.info("Conditional compilation: $conditionalCompilation")
         if (args.typeReport.isNotEmpty() && args.syntaxOnly) {
             throw CliValidationException("--type-report cannot be used with --syntax-only")
         }
@@ -216,7 +221,7 @@ class Main(private val args: Arguments, private val environment: (String) -> Str
                     )
                     // Acquired once, before scanning; scanner workers only see the detached, immutable metadata.
                     acquisition = oracleSettings?.let { OracleMetadataLoader.load(it, appHome.resolve("drivers")) }
-                    projectAnalysisContext = prepareProjectAnalysisContext(projectSources, acquisition?.metadata, compilationSchema)
+                    projectAnalysisContext = prepareProjectAnalysisContext(projectSources, acquisition?.metadata, compilationSchema, conditionalCompilation)
                 }
 
                 val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
@@ -227,7 +232,8 @@ class Main(private val args: Arguments, private val environment: (String) -> Str
                     metadata,
                     true,
                     StandardCharsets.UTF_8,
-                    projectAnalysisContext
+                    projectAnalysisContext,
+                    conditionalCompilation
                 )
 
                 val rawIssues: List<ZpaIssue>
@@ -356,17 +362,41 @@ class Main(private val args: Arguments, private val environment: (String) -> Str
         val LOG = Loggers.getLogger(Main::class.java)
 
         /**
+         * Parses `--ccflags` and `--database-version`; blank values mean not configured.
+         *
+         * @throws CliValidationException naming the invalid option
+         */
+        fun conditionalCompilationSettings(args: Arguments): ConditionalCompilationSettings {
+            val flags = try {
+                ConditionalCompilationSettings.parseFlags(args.ccflags)
+            } catch (e: IllegalArgumentException) {
+                throw CliValidationException("Invalid --ccflags: ${e.message}", e)
+            }
+            val version = try {
+                args.databaseVersion.takeIf { it.isNotBlank() }?.let { ConditionalCompilationSettings.parseVersion(it) }
+            } catch (e: IllegalArgumentException) {
+                throw CliValidationException("Invalid --database-version: ${e.message}", e)
+            }
+            return ConditionalCompilationSettings(flags, version)
+        }
+
+        /**
          * Prepares the project index once from every project source and attaches the external context (Oracle
          * metadata and the default compilation schema) when either is configured; otherwise the context is the
-         * plain prepared project, exactly as without Oracle support.
+         * plain prepared project, exactly as without Oracle support. Sources are lexed with [conditionalCompilation],
+         * which must be the value given to the [AstScanner], so that the index and the AST select the same
+         * conditional compilation branches.
          */
         fun prepareProjectAnalysisContext(
             files: Collection<InputFile>,
             metadata: ProjectExternalMetadata?,
-            compilationSchema: ProjectIdentifier?
+            compilationSchema: ProjectIdentifier?,
+            conditionalCompilation: ConditionalCompilationSettings = ConditionalCompilationSettings.NONE
         ): ProjectAnalysisContext {
             val prepared = ProjectAnalysisContext.prepared(
-                ProjectIndexPreparation().prepare(
+                ProjectIndexPreparation(
+                    ProjectDeclarationExtractor(PlSqlConfiguration(StandardCharsets.UTF_8, true, conditionalCompilation))
+                ).prepare(
                     files.map { file ->
                         ProjectSource(FileId(file.pathRelativeToBase), ProjectSourceReader { file.contents() })
                     }

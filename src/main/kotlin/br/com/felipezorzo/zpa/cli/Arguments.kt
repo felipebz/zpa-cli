@@ -54,6 +54,12 @@ class Arguments {
     @Parameter(names = ["--type-report"], description = "Write a JSON report of %TYPE/%ROWTYPE references in package declarations to this file")
     var typeReport: String = ""
 
+    @Parameter(names = ["--ccflags"], description = "PLSQL_CCFLAGS the code is compiled with, e.g. 'debug:TRUE, level:2' (enables evaluation of \$IF conditions)")
+    var ccflags: String = ""
+
+    @Parameter(names = ["--database-version"], description = "Target database version for DBMS_DB_VERSION, e.g. 19 or 12.2 (enables evaluation of \$IF conditions)")
+    var databaseVersion: String = ""
+
     @Parameter(names = ["--help", "-h"], help = true, description = "Display help information")
     var help: Boolean = false
 }

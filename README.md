@@ -30,6 +30,8 @@ Currently, the zpa-cli supports these options:
   file is not provided, only the rules marked as "activated by default" will be executed.
 * `--type-report`: Path of a JSON file to write the [Oracle type report](#oracle-database-metadata) to. It does not change the analysis output. Not available with `--syntax-only`.
 * `--oracle-url`, `--oracle-user`, `--oracle-password-env`, `--oracle-schemas`, `--oracle-relations`, `--compilation-schema`: optional [Oracle database metadata](#oracle-database-metadata) settings.
+* `--ccflags`: the `PLSQL_CCFLAGS` the code is compiled with, e.g. `'debug:TRUE, level:2'`. See [Conditional compilation](#conditional-compilation).
+* `--database-version`: the target database version for `DBMS_DB_VERSION`, e.g. `19` or `12.2`. See [Conditional compilation](#conditional-compilation).
 
 ### Project context vs analysis targets
 
@@ -55,6 +57,18 @@ Currently, the zpa-cli supports these options:
 * `1`: requested validation condition failed (findings met or exceeded the `--fail-on` threshold)
 * `2`: invalid invocation, command-line arguments, or target file error (e.g. nonexistent target file, target outside `--sources`, stdin used without `--syntax-only`)
 * `3`: execution failure, including Oracle metadata acquisition failures (driver missing, connection refused, invalid credentials)
+
+### Conditional compilation
+
+Without `--ccflags` and `--database-version`, `$IF` conditions are not evaluated: the first branch of each `$IF` (skipping branches that only contain `$ERROR`) is analyzed.
+
+With either option, branches are selected the way the database would compile them: `$$name` takes its `--ccflags` value, an unset `$$flag` counts as `NULL`, and `DBMS_DB_VERSION` follows `--database-version`. A condition that cannot be evaluated (for example a package constant) falls back to the first-branch rule from that branch onward. The options apply in every mode, including `--syntax-only` and standard input, because they change what is parsed.
+
+```
+zpa-cli --sources . --database-version 19 --ccflags 'debug:FALSE'
+```
+
+Invalid values stop the analysis with exit code 2.
 
 ### Oracle database metadata
 
