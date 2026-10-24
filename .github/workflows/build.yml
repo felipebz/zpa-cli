@@ -17,7 +17,7 @@ env:
 jobs:
   build:
     name: Build and verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       digest: ${{ steps.build_image.outputs.digest }}
     steps:
@@ -143,7 +143,7 @@ jobs:
   demo:
     name: Analyze demo project on SonarCloud
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: build
     outputs:
       digest: ${{ needs.build.outputs.digest }}
@@ -188,7 +188,7 @@ jobs:
   promote-development:
     name: Promote validated development digest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: demo
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
