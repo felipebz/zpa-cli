@@ -62,6 +62,19 @@ class OracleSettingsTest {
     }
 
     @Test
+    fun schemaPathsAreParsedAndAnInvalidValueIsRejected() {
+        val base = java.nio.file.Path.of("/base")
+        val paths = OracleSettings.schemaPaths(args("--schema-paths", "source/**=APP, test/**=APP_TEST"), base)
+        assertEquals("APP", paths.schemaOf("source/pkg/a.pks").get().toString())
+        assertEquals("APP_TEST", paths.schemaOf("/base/test/b.pkb").get().toString())
+        assertTrue(paths.schemaOf("other/c.sql").isEmpty)
+        assertTrue(OracleSettings.schemaPaths(args(), base).entries.isEmpty())
+        val invalid = assertFailsWith<CliValidationException> { OracleSettings.schemaPaths(args("--schema-paths", "source/**"), base) }.message!!
+        assertTrue(invalid.contains("--schema-paths"), invalid)
+        assertTrue(failure("--syntax-only", "--schema-paths", "source/**=APP").contains("--syntax-only"))
+    }
+
+    @Test
     fun urlsCarryingCredentialsAreRejectedWithoutEchoingThem() {
         for (url in listOf("jdbc:oracle:thin:scott/$secret@//db:1521/FREEPDB1", "jdbc:oracle:thin:@db?oracle.jdbc.password=$secret")) {
             val message = failure("--oracle-url", url, "--oracle-user", "app", "--oracle-schemas", "HR")

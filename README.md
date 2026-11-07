@@ -29,7 +29,7 @@ Currently, the zpa-cli supports these options:
   You can refer to the example [zpa-config-example.json](zpa-config-example.json) for guidance. If the configuration
   file is not provided, only the rules marked as "activated by default" will be executed.
 * `--type-report`: Path of a JSON file to write the [Oracle type report](#oracle-database-metadata) to. It does not change the analysis output. Not available with `--syntax-only`.
-* `--oracle-url`, `--oracle-user`, `--oracle-password-env`, `--oracle-schemas`, `--oracle-relations`, `--compilation-schema`: optional [Oracle database metadata](#oracle-database-metadata) settings.
+* `--oracle-url`, `--oracle-user`, `--oracle-password-env`, `--oracle-schemas`, `--oracle-relations`, `--compilation-schema`, `--schema-paths`: optional [Oracle database metadata](#oracle-database-metadata) settings.
 * `--ccflags`: the `PLSQL_CCFLAGS` the code is compiled with, e.g. `'debug:TRUE, level:2'`. See [Conditional compilation](#conditional-compilation).
 * `--database-version`: the target database version for `DBMS_DB_VERSION`, e.g. `19` or `12.2`. See [Conditional compilation](#conditional-compilation).
 
@@ -79,9 +79,10 @@ By default, zpa-cli never connects to a database. With `--oracle-url`, it reads 
 * `--oracle-password-env`: name of the environment variable holding the password (default `ZPA_ORACLE_PASSWORD`). The password is never accepted as an argument.
 * `--oracle-schemas`: comma-separated schemas to read completely (exact dictionary names, usually upper case). A schema is only treated as complete when it is the connected user's own schema; other schemas are read as far as the user can see them, and names not found there stay inconclusive.
 * `--oracle-relations`: comma-separated `SCHEMA.RELATION` names to read individually.
-* `--compilation-schema`: the schema in which analyzed units without an explicit owner compile (`CREATE PACKAGE pkg`). It is distinct from the schemas read: a unit written as `CREATE PACKAGE hr.pkg` always compiles in `HR`. Without it, unqualified units are reported as having no schema context.
+* `--compilation-schema`: the schema in which analyzed units without an explicit owner compile (`CREATE PACKAGE pkg`). It is distinct from the schemas read: a unit written as `CREATE PACKAGE hr.pkg` always compiles in `HR`. Without it, unqualified units are reported as having no schema context. It also applies to project lookups, without a database: a name such as `hr.t` reaches the project's `t` when `t` compiles in `HR`, and an unqualified name prefers the declarations of the unit's own schema.
+* `--schema-paths`: comma-separated `pattern=SCHEMA` entries giving the schema in which the units of matching files compile, e.g. `source/**=APP,test/**=APP_TEST`. Patterns are globs relative to `--sources` (`**` any directories, `*` and `?` within one); the first match wins. A unit's schema is its written owner, else its file's mapped schema, else `--compilation-schema`. It applies to project lookups and to the type report, and needs no database.
 
-These options cannot be combined with `--syntax-only`. Errors never print the password or the URL.
+These options, including `--schema-paths`, cannot be combined with `--syntax-only`. Errors never print the password or the URL.
 
 #### JDBC driver
 

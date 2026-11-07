@@ -93,7 +93,7 @@ object TypeReport {
 
     fun build(snapshot: ProjectSnapshot, context: ProjectExternalContext, acquisition: OracleMetadataResult?): Report {
         val references = sites(snapshot).map { site ->
-            val schema = context.compilationSchema(site.owner).orElse(null)
+            val schema = context.compilationSchema(site.owner, site.view.fileId).orElse(null)
             val d = snapshot.describeExternalType(site.reference, site.owner, context.metadata, schema)
             val lookup = d.lookup.orElse(null)
             val relation = lookup?.relation?.orElse(null)

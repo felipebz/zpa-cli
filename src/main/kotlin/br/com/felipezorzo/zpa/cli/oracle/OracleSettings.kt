@@ -4,7 +4,9 @@ import br.com.felipezorzo.zpa.cli.Arguments
 import br.com.felipezorzo.zpa.cli.CliValidationException
 import com.felipebz.zpa.api.annotations.ZpaExperimentalApi
 import com.felipebz.zpa.api.project.ProjectIdentifier
+import com.felipebz.zpa.api.project.ProjectSchemaPaths
 import com.felipebz.zpa.oracle.metadata.OracleMetadataRequest
+import java.nio.file.Path
 
 /**
  * Validated database settings. [url] and the password are secrets-bearing values: they are never included in
@@ -41,6 +43,10 @@ class OracleSettings(
             if (args.syntaxOnly && (anyOption || args.compilationSchema.isNotBlank())) {
                 throw CliValidationException("Oracle metadata options cannot be used with --syntax-only")
             }
+            // Schemas apply to project lookups, which --syntax-only does not make.
+            if (args.syntaxOnly && args.schemaPaths.isNotBlank()) {
+                throw CliValidationException("--schema-paths cannot be used with --syntax-only")
+            }
             if (!anyOption) return null
             if (args.oracleUrl.isBlank()) {
                 throw CliValidationException("--oracle-user, --oracle-schemas and --oracle-relations require --oracle-url")
@@ -76,6 +82,16 @@ class OracleSettings(
             if (name.isEmpty()) return null
             if (name.contains('"')) throw CliValidationException("--compilation-schema must be an exact dictionary name, without quotes")
             return ProjectIdentifier.fromSource("\"$name\"")
+        }
+
+        /** The `--schema-paths` mapping, relative to [baseDirectory]; empty when not given. */
+        fun schemaPaths(args: Arguments, baseDirectory: Path): ProjectSchemaPaths {
+            if (args.schemaPaths.isBlank()) return ProjectSchemaPaths.none()
+            return try {
+                ProjectSchemaPaths.parse(baseDirectory, args.schemaPaths)
+            } catch (e: IllegalArgumentException) {
+                throw CliValidationException("Invalid --schema-paths value: ${e.message}")
+            }
         }
 
         private fun names(value: String, option: String): List<String> {

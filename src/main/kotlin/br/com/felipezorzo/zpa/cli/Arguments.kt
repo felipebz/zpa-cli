@@ -51,6 +51,9 @@ class Arguments {
     @Parameter(names = ["--compilation-schema"], description = "Schema in which analyzed units without an explicit schema compile (exact dictionary name)")
     var compilationSchema: String = ""
 
+    @Parameter(names = ["--schema-paths"], description = "Comma-separated pattern=SCHEMA entries: the schema in which units of files matching each glob (relative to --sources) compile; the first match wins")
+    var schemaPaths: String = ""
+
     @Parameter(names = ["--type-report"], description = "Write a JSON report of %TYPE/%ROWTYPE references in package declarations to this file")
     var typeReport: String = ""
 

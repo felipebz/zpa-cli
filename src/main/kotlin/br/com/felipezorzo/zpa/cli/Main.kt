@@ -23,6 +23,7 @@ import com.felipebz.zpa.api.checks.PlSqlVisitor
 import com.felipebz.zpa.api.project.ProjectExternalContext
 import com.felipebz.zpa.api.project.ProjectExternalMetadata
 import com.felipebz.zpa.api.project.ProjectIdentifier
+import com.felipebz.zpa.api.project.ProjectSchemaPaths
 import com.felipebz.zpa.checks.ParsingErrorCheck
 import com.felipebz.zpa.metadata.FormsMetadata
 import com.felipebz.zpa.oracle.metadata.OracleMetadataResult
@@ -30,11 +31,7 @@ import com.felipebz.zpa.project.*
 import com.felipebz.zpa.rules.Repository
 import com.felipebz.zpa.rules.RuleMetadataLoader
 import com.felipebz.zpa.rules.ZpaChecks
-import com.felipebz.zpa.squid.AstScanner
-import com.felipebz.zpa.squid.ConditionalCompilationSettings
-import com.felipebz.zpa.squid.PlSqlConfiguration
-import com.felipebz.zpa.squid.ProgressReport
-import com.felipebz.zpa.squid.ZpaIssue
+import com.felipebz.zpa.squid.*
 import com.felipebz.zpa.utils.log.Loggers
 import me.lucko.jarrelocator.JarRelocator
 import me.lucko.jarrelocator.Relocation
@@ -96,6 +93,8 @@ class Main(private val args: Arguments, private val environment: (String) -> Str
         // Database settings are validated before anything runs; no connection is made unless --oracle-url is given.
         val oracleSettings = OracleSettings.from(args, environment)
         val compilationSchema = OracleSettings.compilationSchema(args)
+        val schemaPaths = OracleSettings.schemaPaths(args, baseDirPath)
+        if (schemaPaths.entries.isNotEmpty()) LOG.info("Schema paths: $schemaPaths")
         // Applies in every mode (it changes what parses); the project index and the AST get the same value.
         val conditionalCompilation = conditionalCompilationSettings(args)
         if (conditionalCompilation.isActive) LOG.info("Conditional compilation: $conditionalCompilation")
@@ -221,7 +220,7 @@ class Main(private val args: Arguments, private val environment: (String) -> Str
                     )
                     // Acquired once, before scanning; scanner workers only see the detached, immutable metadata.
                     acquisition = oracleSettings?.let { OracleMetadataLoader.load(it, appHome.resolve("drivers")) }
-                    projectAnalysisContext = prepareProjectAnalysisContext(projectSources, acquisition?.metadata, compilationSchema, conditionalCompilation)
+                    projectAnalysisContext = prepareProjectAnalysisContext(projectSources, acquisition?.metadata, compilationSchema, conditionalCompilation, schemaPaths)
                 }
 
                 val progressReport = ProgressReport("Report about progress of code analyzer", TimeUnit.SECONDS.toMillis(10))
@@ -381,9 +380,9 @@ class Main(private val args: Arguments, private val environment: (String) -> Str
         }
 
         /**
-         * Prepares the project index once from every project source and attaches the external context (Oracle
-         * metadata and the default compilation schema) when either is configured; otherwise the context is the
-         * plain prepared project, exactly as without Oracle support. Sources are lexed with [conditionalCompilation],
+         * Prepares the project index once from every project source with the schemas units compile in (the default
+         * [compilationSchema] and the [schemaPaths] mapping), which the prepared context carries to the scan, and adds
+         * Oracle [metadata] when given. Without either, the context is the plain prepared project. Sources are lexed with [conditionalCompilation],
          * which must be the value given to the [AstScanner], so that the index and the AST select the same
          * conditional compilation branches.
          */
@@ -391,21 +390,22 @@ class Main(private val args: Arguments, private val environment: (String) -> Str
             files: Collection<InputFile>,
             metadata: ProjectExternalMetadata?,
             compilationSchema: ProjectIdentifier?,
-            conditionalCompilation: ConditionalCompilationSettings = ConditionalCompilationSettings.NONE
+            conditionalCompilation: ConditionalCompilationSettings = ConditionalCompilationSettings.NONE,
+            schemaPaths: ProjectSchemaPaths = ProjectSchemaPaths.none()
         ): ProjectAnalysisContext {
+            // The schemas go to the index and, carried by its result, to the scan's lookups.
+            val schemas = if (compilationSchema == null && schemaPaths.entries.isEmpty()) ProjectExternalContext.none()
+            else ProjectExternalContext.of(ProjectExternalMetadata.none(), compilationSchema, schemaPaths)
             val prepared = ProjectAnalysisContext.prepared(
-                ProjectIndexPreparation(
-                    ProjectDeclarationExtractor(PlSqlConfiguration(StandardCharsets.UTF_8, true, conditionalCompilation))
+                ProjectIndexPreparation.withSchemas(
+                    ProjectDeclarationExtractor(PlSqlConfiguration(StandardCharsets.UTF_8, true, conditionalCompilation)), schemas
                 ).prepare(
                     files.map { file ->
                         ProjectSource(FileId(file.pathRelativeToBase), ProjectSourceReader { file.contents() })
                     }
                 )
             )
-            if (metadata == null && compilationSchema == null) return prepared
-            return prepared.withExternalContext(
-                ProjectExternalContext.of(metadata ?: ProjectExternalMetadata.none(), compilationSchema)
-            )
+            return metadata?.let(prepared::withMetadata) ?: prepared
         }
     }
 }
