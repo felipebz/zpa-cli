@@ -52,7 +52,7 @@ val oracleIntegrationTest by sourceSets.creating {
 dependencies {
     "oracleIntegrationTestImplementation"(kotlin("test"))
     // The Oracle JDBC driver is never a runtime dependency of the CLI: users supply it in the `drivers` directory.
-    "oracleIntegrationTestImplementation"("com.oracle.database.jdbc:ojdbc17:23.26.3.0.0")
+    "oracleIntegrationTestImplementation"("com.oracle.database.jdbc:ojdbc17:23.26.4.0.0")
 }
 
 val oracleIntegrationTestTask = tasks.register<Test>("oracleIntegrationTest") {
