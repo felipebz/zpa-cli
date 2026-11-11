@@ -12,6 +12,7 @@ RUN set -eux; \
     chown -R 1001:1001 /opt/zpa-cli
 
 ENV PATH=/opt/zpa-cli/bin:$PATH
+ENV JAVA_OPTS="-XX:+UseCompactObjectHeaders"
 
 USER 1001:1001
 WORKDIR /src

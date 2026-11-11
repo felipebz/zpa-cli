@@ -198,6 +198,11 @@ jreleaser {
                         }
                     }
                 }
+                java {
+                    jvmOptions {
+                        universal("-XX:+UseCompactObjectHeaders")
+                    }
+                }
                 jdk {
                     val jdkPath = javaToolchains.launcherFor {
                         languageVersion.set(JavaLanguageVersion.of(25))
