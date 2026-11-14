@@ -24,7 +24,7 @@ class TypeReportTest {
     private val mapper = jacksonObjectMapper()
     private val hr = ProjectIdentifier.fromSource("\"HR\"")
 
-    private val metadata = ProjectExternalMetadata.builder("test fixture").completeSchema("HR").relation(
+    private val metadata = ProjectExternalMetadata.builder("test fixture").completeSchema("HR").completePublicSynonyms().relation(
         ProjectExternalRelation.of(
             "HR", "EMPLOYEES", true, listOf(
                 ProjectExternalColumn.of("ID", 1, ProjectExternalDatatype.of("NUMBER", null, null, null, 6, 0)),

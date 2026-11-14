@@ -85,10 +85,10 @@ object TypeReport {
         ProjectExternalTypeDescription.Status.UNAVAILABLE to "no database metadata was supplied",
         ProjectExternalTypeDescription.Status.SCHEMA_CONTEXT_MISSING to "the compilation schema is unknown (use --compilation-schema)",
         ProjectExternalTypeDescription.Status.INCOMPLETE to "the metadata does not cover this name",
-        ProjectExternalTypeDescription.Status.RELATION_NOT_FOUND to "no table or view of that name in the read schema (Oracle may still resolve it, e.g. through a synonym)",
+        ProjectExternalTypeDescription.Status.RELATION_NOT_FOUND to "no table, view or synonym of that name in the read metadata (Oracle may still resolve it through a path the metadata does not model)",
         ProjectExternalTypeDescription.Status.COLUMN_NOT_FOUND to "the relation has no such column in the read metadata",
-        ProjectExternalTypeDescription.Status.AMBIGUOUS to "two relation readings exist",
-        ProjectExternalTypeDescription.Status.CONFLICT to "a project declaration and a relation compete for the name"
+        ProjectExternalTypeDescription.Status.CONFLICT to "a project declaration and a relation compete for the name",
+        ProjectExternalTypeDescription.Status.REMOTE to "the anchor is behind a database link, and the metadata describes the local database only"
     )
 
     fun build(snapshot: ProjectSnapshot, context: ProjectExternalContext, acquisition: OracleMetadataResult?): Report {

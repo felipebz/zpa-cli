@@ -94,7 +94,7 @@ The Oracle JDBC driver is not bundled. Copy `ojdbc17.jar` (Maven Central `com.or
 
 * `file`, `startLine` (1-based), `startColumn` (0-based), `declaration`, `kind`, `role`, `element` and the written `reference`;
 * `compilationSchema`: the schema used to read the reference;
-* `status`: `RESOLVED`, or an inconclusive status: `UNAVAILABLE` (no metadata), `SCHEMA_CONTEXT_MISSING`, `INCOMPLETE` (the metadata does not cover the name), `RELATION_NOT_FOUND` (no table or view of that name was read; Oracle may still resolve it, e.g. through a synonym), `COLUMN_NOT_FOUND`, `CAPTURE_NOT_EXCLUDED`, `AMBIGUOUS`, `CONFLICT`, `SOURCE_INCOMPLETE`, `NOT_EXTERNAL`, with a `note`;
+* `status`: `RESOLVED`, or an inconclusive status: `UNAVAILABLE` (no metadata), `SCHEMA_CONTEXT_MISSING`, `INCOMPLETE` (the metadata does not cover the name), `RELATION_NOT_FOUND` (no table, view or synonym of that name was read; Oracle may still resolve it through a path the metadata does not model), `COLUMN_NOT_FOUND`, `CAPTURE_NOT_EXCLUDED`, `CONFLICT`, `REMOTE` (the anchor is behind a database link; no lookup is performed), `SOURCE_INCOMPLETE`, `NOT_EXTERNAL`, with a `note`;
 * for resolved `%TYPE`: `relation` and `type` (Oracle datatype, e.g. `NUMBER(10,2)`, `VARCHAR2(40 CHAR)`); for resolved `%ROWTYPE`: `rowFields` in column order (invisible columns excluded).
 
 The report covers all files under `--sources`, also when `--files` restricts the diagnosed files. Rules and their findings are unaffected.
