@@ -1,10 +1,6 @@
 package br.com.felipezorzo.zpa.cli
 
-import br.com.felipezorzo.zpa.cli.config.BaseRuleCategory
-import br.com.felipezorzo.zpa.cli.config.ConfigFile
-import br.com.felipezorzo.zpa.cli.config.RuleConfiguration
-import br.com.felipezorzo.zpa.cli.config.RuleLevel
-import br.com.felipezorzo.zpa.cli.config.RuleOptions
+import br.com.felipezorzo.zpa.cli.config.*
 import br.com.felipezorzo.zpa.cli.rules.CliActiveRules
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.felipebz.zpa.CustomAnnotationBasedRulesDefinition
@@ -127,15 +123,16 @@ class TemplateRuleInstancesTest {
                 }
             ).run()
 
-            val issues = jacksonObjectMapper()
-                .readTree(issuesPath)
+            val report = jacksonObjectMapper().readTree(issuesPath)
+            val severities = report.get("rules").associate { it.get("id").asText() to it.get("severity").asText() }
+            val issues = report
                 .get("issues")
                 .elements()
                 .asSequence()
                 .map { issue ->
                     Triple(
                         issue.get("ruleId").asText(),
-                        issue.get("severity").asText(),
+                        severities.getValue(issue.get("ruleId").asText()),
                         issue.get("primaryLocation").get("message").asText()
                     )
                 }

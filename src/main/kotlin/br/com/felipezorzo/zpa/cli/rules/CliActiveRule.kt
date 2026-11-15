@@ -23,7 +23,7 @@ import com.felipebz.zpa.rules.*
 
 class CliActiveRule(
     private val activeRule : ActiveRule,
-    private val rule: ZpaRule
+    val rule: ZpaRule
 ) : ZpaActiveRule by activeRule {
 
     constructor(repository : ZpaRepository, rule: ZpaRule, configuration: ActiveRuleConfiguration?) : this(ActiveRule(repository, rule, configuration), rule)
