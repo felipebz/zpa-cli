@@ -32,6 +32,14 @@ class OracleDatabase private constructor(val jdbcUrl: String, private val admin:
         })
     }
 
+    fun createPublicSynonym(name: String, target: String) {
+        admin.connection.use { c -> c.createStatement().use { it.execute("CREATE PUBLIC SYNONYM $name FOR $target") } }
+    }
+
+    fun dropPublicSynonym(name: String) {
+        admin.connection.use { c -> c.createStatement().use { it.execute("DROP PUBLIC SYNONYM $name") } }
+    }
+
     override fun close() {
         admin.connection.use { c ->
             c.createStatement().use { s -> users.forEach { s.execute("DROP USER $it CASCADE") } }

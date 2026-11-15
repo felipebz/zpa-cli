@@ -18,16 +18,19 @@ class OracleSettings(
     val user: String,
     val password: String,
     val schemas: List<String>,
-    val relations: List<Pair<String, String>>
+    val relations: List<Pair<String, String>>,
+    val publicSynonyms: Boolean = true
 ) {
     fun request(): OracleMetadataRequest {
         val builder = OracleMetadataRequest.builder()
         schemas.forEach { builder.schema(it) }
         relations.forEach { (schema, name) -> builder.relation(schema, name) }
+        if (publicSynonyms) builder.publicSynonyms()
         return builder.build()
     }
 
-    override fun toString(): String = "OracleSettings(user=$user, schemas=$schemas, relations=$relations)"
+    override fun toString(): String =
+        "OracleSettings(user=$user, schemas=$schemas, relations=$relations, publicSynonyms=$publicSynonyms)"
 
     companion object {
         /** `jdbc:oracle:thin:user/password@...` or a `password=` property. */
@@ -39,7 +42,7 @@ class OracleSettings(
          */
         fun from(args: Arguments, environment: (String) -> String?): OracleSettings? {
             val anyOption = args.oracleUrl.isNotBlank() || args.oracleUser.isNotBlank() || args.oracleSchemas.isNotBlank() ||
-                args.oracleRelations.isNotBlank()
+                args.oracleRelations.isNotBlank() || args.oraclePublicSynonyms != null
             if (args.syntaxOnly && (anyOption || args.compilationSchema.isNotBlank())) {
                 throw CliValidationException("Oracle metadata options cannot be used with --syntax-only")
             }
@@ -49,21 +52,18 @@ class OracleSettings(
             }
             if (!anyOption) return null
             if (args.oracleUrl.isBlank()) {
-                throw CliValidationException("--oracle-user, --oracle-schemas and --oracle-relations require --oracle-url")
+                throw CliValidationException(
+                    "--oracle-user, --oracle-schemas, --oracle-relations and --oracle-public-synonyms require --oracle-url"
+                )
             }
             if (args.oracleUser.isBlank()) throw CliValidationException("--oracle-url requires --oracle-user")
             if (CREDENTIALS_IN_URL.containsMatchIn(args.oracleUrl)) {
                 // The URL is deliberately not echoed: it carries a credential.
                 throw CliValidationException("--oracle-url must not contain credentials; use --oracle-user and the password environment variable")
             }
+            val publicSynonyms = publicSynonyms(args.oraclePublicSynonyms)
             val schemas = names(args.oracleSchemas, "--oracle-schemas")
-            val relations = names(args.oracleRelations, "--oracle-relations").map { relation ->
-                val parts = relation.split('.')
-                if (parts.size != 2 || parts.any { it.isEmpty() }) {
-                    throw CliValidationException("Invalid --oracle-relations entry '$relation': expected SCHEMA.RELATION")
-                }
-                parts[0] to parts[1]
-            }
+            val relations = names(args.oracleRelations, "--oracle-relations").map(::relation)
             if (schemas.isEmpty() && relations.isEmpty()) {
                 throw CliValidationException("--oracle-url requires --oracle-schemas or --oracle-relations")
             }
@@ -73,7 +73,7 @@ class OracleSettings(
             if (password.isNullOrEmpty()) {
                 throw CliValidationException("The database password environment variable '$variable' is not set")
             }
-            return OracleSettings(args.oracleUrl, args.oracleUser, password, schemas, relations)
+            return OracleSettings(args.oracleUrl, args.oracleUser, password, schemas, relations, publicSynonyms)
         }
 
         /** The `--compilation-schema` value as an exact identifier, or null. */
@@ -92,6 +92,21 @@ class OracleSettings(
             } catch (e: IllegalArgumentException) {
                 throw CliValidationException("Invalid --schema-paths value: ${e.message}")
             }
+        }
+
+        private fun relation(entry: String): Pair<String, String> {
+            val parts = entry.split('.')
+            if (parts.size != 2 || parts.any { it.isEmpty() }) {
+                throw CliValidationException("Invalid --oracle-relations entry '$entry': expected SCHEMA.RELATION")
+            }
+            return parts[0] to parts[1]
+        }
+
+        /** `--oracle-public-synonyms`: on when not given. */
+        private fun publicSynonyms(value: String?): Boolean = when (value?.trim()?.lowercase()) {
+            null, "true" -> true
+            "false" -> false
+            else -> throw CliValidationException("Invalid --oracle-public-synonyms value '$value': expected true or false")
         }
 
         private fun names(value: String, option: String): List<String> {

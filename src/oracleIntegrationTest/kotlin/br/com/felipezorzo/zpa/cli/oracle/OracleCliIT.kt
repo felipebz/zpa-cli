@@ -24,10 +24,7 @@ import java.io.PrintStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 /**
  * The CLI against a real Oracle database: packages anchored to real table and view columns, analyzed offline and with
@@ -39,6 +36,7 @@ class OracleCliIT {
     private lateinit var database: OracleDatabase
     private lateinit var owner: OracleDatabase.User
     private lateinit var reference: OracleDatabase.User
+    private lateinit var publicSynonym: String
     private val root: File = Files.createTempDirectory("zpa-cli-oracle-it").toFile()
     private val sources = root.resolve("src")
     private val mapper = jacksonObjectMapper()
@@ -58,6 +56,9 @@ class OracleCliIT {
             "CREATE VIEW emp_v AS SELECT id, name, salary * 12 AS annual FROM employees",
             "CREATE SYNONYM emp_syn FOR employees"
         )
+        val synonymName = "${owner.name}_STAFF"
+        database.createPublicSynonym(synonymName, "${owner.name}.employees")
+        publicSynonym = synonymName
         val hrApi = """
             CREATE OR REPLACE PACKAGE hr_api AS
               v_salary employees.salary%TYPE;
@@ -86,12 +87,19 @@ class OracleCliIT {
         )
         sources.resolve("billing.pks").writeText("CREATE OR REPLACE PACKAGE otherapp.billing AS v_salary employees.salary%TYPE; END billing;")
         sources.resolve("job.sql").writeText("BEGIN\n  IF 1 = 1 THEN\n    NULL;\n  END IF;\nEND;\n/\n")
+        sources.resolve("roster.pks").writeText("CREATE OR REPLACE PACKAGE roster AS v_pay $publicSynonym.salary%TYPE; END roster;")
     }
 
     @AfterAll
     fun dropFixture() {
         root.deleteRecursively()
-        if (::database.isInitialized) database.close()
+        if (::database.isInitialized) {
+            try {
+                if (::publicSynonym.isInitialized) database.dropPublicSynonym(publicSynonym)
+            } finally {
+                database.close()
+            }
+        }
     }
 
     private class Run(val exitCode: Int, val stdout: String, val stderr: String)
@@ -116,15 +124,30 @@ class OracleCliIT {
         "--oracle-schemas", owner.name, "--oracle-relations", "${reference.name}.COUNTRIES", "--compilation-schema", owner.name
     )
 
-    private fun typeReport(): JsonNode {
+    private fun typeReport(vararg extra: String): JsonNode {
         val report = root.resolve("types.json")
-        val run = cli(*oracleOptions(), "--output-format", "json", "--output-file", root.resolve("issues.json").absolutePath, "--type-report", report.absolutePath)
+        val run = cli(
+            *oracleOptions(), *extra, "--output-format", "json", "--output-file", root.resolve("issues.json").absolutePath,
+            "--type-report", report.absolutePath
+        )
         assertEquals(0, run.exitCode, run.stderr)
         return mapper.readTree(report)
     }
 
     private fun JsonNode.reference(declaration: String, element: String = "type"): JsonNode =
         get("references").single { it.get("declaration").asText() == declaration && it.get("element").asText() == element }
+
+    @Test
+    fun anAnchorThroughAPublicSynonymResolvesUnlessPublicSynonymsAreOff() {
+        assertTrue(owner.accepts("DECLARE v $publicSynonym.salary%TYPE; BEGIN NULL; END;"))
+        val resolved = typeReport().reference("roster.v_pay")
+        assertEquals("RESOLVED", resolved.get("status").asText())
+        assertEquals("NUMBER(10,2)", resolved.get("type").get("display").asText())
+
+        val skipped = typeReport("--oracle-public-synonyms", "false").reference("roster.v_pay")
+        assertNotEquals("RESOLVED", skipped.get("status").asText())
+        assertFalse(skipped.has("type"))
+    }
 
     @Test
     fun offlineAnalysisIsUnchangedByMetadata() {
@@ -179,12 +202,20 @@ class OracleCliIT {
     fun uncoveredOrUnprovableReferencesStayInconclusive() {
         val report = typeReport()
         assertEquals("COLUMN_NOT_FOUND", report.reference("gaps.v_bonus").get("status").asText())
-        // Oracle resolves the synonym, the metadata has no synonyms: not found, never a resolved guess.
+        // The owner's private synonym is read with its schema and followed to its table, as Oracle does.
         assertTrue(owner.accepts("DECLARE v emp_syn.salary%TYPE; BEGIN NULL; END;"))
-        assertEquals("RELATION_NOT_FOUND", report.reference("gaps.v_synonym").get("status").asText())
+        val synonym = report.reference("gaps.v_synonym")
+        assertEquals("RESOLVED", synonym.get("status").asText())
+        assertEquals("NUMBER(10,2)", synonym.get("type").get("display").asText())
         // The other schema was read for one relation only; its other relations are unknown.
-        // A schema-qualified anchor: an object of that name the project cannot see could capture it.
-        assertEquals("CAPTURE_NOT_EXCLUDED", report.reference("gaps.v_country").get("status").asText())
+        // A public synonym named like the schema could capture a schema-qualified anchor, so excluding capture needs
+        // every public synonym.
+        val country = report.reference("gaps.v_country")
+        assertEquals("RESOLVED", country.get("status").asText())
+        assertEquals("VARCHAR2(60 CHAR)", country.get("type").get("display").asText())
+        val withoutPublicSynonyms = typeReport("--oracle-public-synonyms", "false")
+        assertEquals("CAPTURE_NOT_EXCLUDED", withoutPublicSynonyms.reference("gaps.v_country").get("status").asText())
+        assertEquals("RESOLVED", withoutPublicSynonyms.reference("gaps.v_synonym").get("status").asText())
         assertEquals("INCOMPLETE", report.reference("gaps.v_city").get("status").asText())
         // A unit of another schema is never described in the default compilation schema.
         val billing = report.reference("otherapp.billing.v_salary")
@@ -225,9 +256,9 @@ class OracleCliIT {
 
         // Every package file is scanned in parallel and sees the same project-wide descriptions.
         val packageProbes = probes.filterIndexed { i, _ -> files[i].pathRelativeToBase.endsWith(".pks") }
-        assertEquals(3, packageProbes.size)
+        assertEquals(4, packageProbes.size)
         val statuses = packageProbes.map { probe -> probe.descriptions.mapValues { it.value.status } }
-        assertTrue(statuses.all { it == statuses.first() && it.size == 10 }, statuses.toString())
+        assertTrue(statuses.all { it == statuses.first() && it.size == 11 }, statuses.toString())
         assertTrue(probes.single { it !in packageProbes }.descriptions.isEmpty())
         val salary = packageProbes.first().descriptions.getValue("hr_api.v_salary")
         assertEquals(ProjectExternalTypeDescription.Status.RESOLVED, salary.status)

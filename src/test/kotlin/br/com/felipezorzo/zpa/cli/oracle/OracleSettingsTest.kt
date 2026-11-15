@@ -62,6 +62,31 @@ class OracleSettingsTest {
     }
 
     @Test
+    fun publicSynonymsAreReadUnlessTurnedOff() {
+        val base = arrayOf("--oracle-url", "jdbc:oracle:thin:@ledgerdb", "--oracle-user", "clerk", "--oracle-schemas", "LEDGER")
+        val byDefault = settings(*base)!!
+        assertTrue(byDefault.request().publicSynonyms)
+        assertTrue(byDefault.toString().contains("publicSynonyms=true"))
+        assertTrue(settings(*base, "--oracle-public-synonyms", "true")!!.request().publicSynonyms)
+        val off = settings(*base, "--oracle-public-synonyms", "false")!!
+        assertFalse(off.request().publicSynonyms)
+        assertTrue(off.toString().contains("publicSynonyms=false"))
+    }
+
+    @Test
+    fun anInvalidPublicSynonymsValueOrAMisplacedOptionIsRejected() {
+        val invalid = failure(
+            "--oracle-url", "jdbc:oracle:thin:@//ledgerhost:1521/BOOKS", "--oracle-user", "clerk", "--oracle-schemas", "LEDGER",
+            "--oracle-public-synonyms", "sometimes"
+        )
+        assertTrue(invalid.contains("--oracle-public-synonyms"))
+        assertFalse(invalid.contains("ledgerhost"))
+        assertFalse(invalid.contains(secret))
+        assertTrue(failure("--oracle-public-synonyms", "false").contains("require --oracle-url"))
+        assertTrue(failure("--syntax-only", "--oracle-public-synonyms", "true").contains("--syntax-only"))
+    }
+
+    @Test
     fun schemaPathsAreParsedAndAnInvalidValueIsRejected() {
         val base = java.nio.file.Path.of("/base")
         val paths = OracleSettings.schemaPaths(args("--schema-paths", "source/**=APP, test/**=APP_TEST"), base)

@@ -48,6 +48,9 @@ class Arguments {
     @Parameter(names = ["--oracle-relations"], description = "Comma-separated SCHEMA.RELATION names to read individually (exact dictionary names)")
     var oracleRelations: String = ""
 
+    @Parameter(names = ["--oracle-public-synonyms"], arity = 1, description = "Read every public synonym visible to --oracle-user: true (default) or false")
+    var oraclePublicSynonyms: String? = null
+
     @Parameter(names = ["--compilation-schema"], description = "Schema in which analyzed units without an explicit schema compile (exact dictionary name)")
     var compilationSchema: String = ""
 
