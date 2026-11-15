@@ -5,5 +5,14 @@
         ":automergePatch",
         "schedule:weekly"
     ],
-    "mode": "full"
+    "mode": "full",
+    "customManagers": [
+        {
+            "customType": "regex",
+            "description": "Oracle image started by the database-backed test suite",
+            "managerFilePatterns": ["/(^|/)gradle\\.properties$/"],
+            "matchStrings": ["zpaOracleImage=(?<depName>gvenzl/oracle-free):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"],
+            "datasourceTemplate": "docker"
+        }
+    ]
 }

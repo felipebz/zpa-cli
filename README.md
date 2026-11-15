@@ -102,7 +102,7 @@ The report covers all files under `--sources`, also when `--files` restricts the
 
 #### Integration tests
 
-`./gradlew oracleIntegrationTest` runs the CLI against a real Oracle database (never part of `build`). It creates and drops disposable users through an administrative account given by `ZPA_ORACLE_JDBC_URL`, `ZPA_ORACLE_ADMIN_USER` and `ZPA_ORACLE_ADMIN_PASSWORD`; the tests are skipped when they are unset.
+`./gradlew oracleIntegrationTest` runs the CLI against a real Oracle database (never part of `build`). By default it starts an Oracle container with Testcontainers, so it needs Docker; the image is pinned by `zpaOracleImage` in `gradle.properties` and can be overridden with `ZPA_ORACLE_IMAGE`. To use an existing database instead, set `ZPA_ORACLE_JDBC_URL`, `ZPA_ORACLE_ADMIN_USER` and `ZPA_ORACLE_ADMIN_PASSWORD`. Either way, the tests create and drop disposable users through the administrative account. They are skipped when neither Docker nor those variables are available.
 
 ### Examples
 

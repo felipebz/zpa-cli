@@ -43,7 +43,8 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// Database-backed tests: never part of `check`/`build`; they need an Oracle instance (see README.md).
+// Database-backed tests: never part of `check`/`build`. They start an Oracle container (Testcontainers) or use the
+// database named by ZPA_ORACLE_* environment variables (see README.md).
 val oracleIntegrationTest by sourceSets.creating {
     compileClasspath += sourceSets.main.get().output + configurations.testRuntimeClasspath.get()
     runtimeClasspath += output + compileClasspath
@@ -53,15 +54,17 @@ dependencies {
     "oracleIntegrationTestImplementation"(kotlin("test"))
     // The Oracle JDBC driver is never a runtime dependency of the CLI: users supply it in the `drivers` directory.
     "oracleIntegrationTestImplementation"("com.oracle.database.jdbc:ojdbc17:23.26.4.0.0")
+    "oracleIntegrationTestImplementation"("org.testcontainers:testcontainers-oracle-free:2.0.5")
 }
 
 val oracleIntegrationTestTask = tasks.register<Test>("oracleIntegrationTest") {
-    description = "Runs the Oracle database integration tests (requires ZPA_ORACLE_* environment variables)."
+    description = "Runs the Oracle database integration tests (needs Docker, or ZPA_ORACLE_* environment variables)."
     group = "verification"
     testClassesDirs = oracleIntegrationTest.output.classesDirs
     classpath = oracleIntegrationTest.runtimeClasspath
     useJUnitPlatform()
     outputs.upToDateWhen { false }
+    systemProperty("zpa.oracle.image", providers.gradleProperty("zpaOracleImage").get())
 }
 
 application {
