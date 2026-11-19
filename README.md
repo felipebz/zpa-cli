@@ -77,13 +77,15 @@ By default, zpa-cli never connects to a database. With `--oracle-url`, it reads 
 * `--oracle-url`: JDBC URL, e.g. `jdbc:oracle:thin:@//db.example.com:1521/FREEPDB1`. It must not contain credentials.
 * `--oracle-user`: database user.
 * `--oracle-password-env`: name of the environment variable holding the password (default `ZPA_ORACLE_PASSWORD`). The password is never accepted as an argument.
-* `--oracle-schemas`: comma-separated schemas to read completely (exact dictionary names, usually upper case). A schema is only treated as complete when it is the connected user's own schema; other schemas are read as far as the user can see them, and names not found there stay inconclusive.
+* `--oracle-schemas`: comma-separated schemas to read completely. A schema is only treated as complete when it is the connected user's own schema; other schemas are read as far as the user can see them, and names not found there stay inconclusive.
 * `--oracle-relations`: comma-separated `SCHEMA.RELATION` names to read individually.
 * `--oracle-public-synonyms`: `true` (default) reads every public synonym visible to the user, so a name that exists only through a public synonym resolves; `false` skips them.
 * `--compilation-schema`: the schema in which analyzed units without an explicit owner compile (`CREATE PACKAGE pkg`). It is distinct from the schemas read: a unit written as `CREATE PACKAGE hr.pkg` always compiles in `HR`. Without it, unqualified units are reported as having no schema context. It also applies to project lookups, without a database: a name such as `hr.t` reaches the project's `t` when `t` compiles in `HR`, and an unqualified name prefers the declarations of the unit's own schema.
 * `--schema-paths`: comma-separated `pattern=SCHEMA` entries giving the schema in which the units of matching files compile, e.g. `source/**=APP,test/**=APP_TEST`. Patterns are globs relative to `--sources` (`**` any directories, `*` and `?` within one); the first match wins. A unit's schema is its written owner, else its file's mapped schema, else `--compilation-schema`. It applies to project lookups and to the type report, and needs no database.
 
 These options, including `--schema-paths`, cannot be combined with `--syntax-only`. Errors never print the password or the URL.
+
+Schema and relation names in these options are read as Oracle reads identifiers: an unquoted name is upper-cased (`hr` and `HR` are both `HR`), and a name in double quotes is taken exactly as written (`'"hr"'` is the schema `hr`).
 
 #### JDBC driver
 

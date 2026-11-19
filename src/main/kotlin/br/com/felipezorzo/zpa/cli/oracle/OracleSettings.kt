@@ -2,10 +2,12 @@ package br.com.felipezorzo.zpa.cli.oracle
 
 import br.com.felipezorzo.zpa.cli.Arguments
 import br.com.felipezorzo.zpa.cli.CliValidationException
+import br.com.felipezorzo.zpa.cli.oracle.OracleSettings.Companion.dictionaryName
 import com.felipebz.zpa.api.annotations.ZpaExperimentalApi
 import com.felipebz.zpa.api.project.ProjectIdentifier
 import com.felipebz.zpa.api.project.ProjectSchemaPaths
 import com.felipebz.zpa.oracle.metadata.OracleMetadataRequest
+import com.felipebz.zpa.oracle.metadata.OracleRelationName
 import java.nio.file.Path
 
 /**
@@ -62,8 +64,8 @@ class OracleSettings(
                 throw CliValidationException("--oracle-url must not contain credentials; use --oracle-user and the password environment variable")
             }
             val publicSynonyms = publicSynonyms(args.oraclePublicSynonyms)
-            val schemas = names(args.oracleSchemas, "--oracle-schemas")
-            val relations = names(args.oracleRelations, "--oracle-relations").map(::relation)
+            val schemas = names(args.oracleSchemas, "--oracle-schemas").map { dictionaryName(it, "--oracle-schemas") }.distinct()
+            val relations = names(args.oracleRelations, "--oracle-relations").map(::relation).distinct()
             if (schemas.isEmpty() && relations.isEmpty()) {
                 throw CliValidationException("--oracle-url requires --oracle-schemas or --oracle-relations")
             }
@@ -76,12 +78,11 @@ class OracleSettings(
             return OracleSettings(args.oracleUrl, args.oracleUser, password, schemas, relations, publicSynonyms)
         }
 
-        /** The `--compilation-schema` value as an exact identifier, or null. */
+        /** The `--compilation-schema` value as an identifier (see [dictionaryName]), or null. */
         fun compilationSchema(args: Arguments): ProjectIdentifier? {
             val name = args.compilationSchema.trim()
             if (name.isEmpty()) return null
-            if (name.contains('"')) throw CliValidationException("--compilation-schema must be an exact dictionary name, without quotes")
-            return ProjectIdentifier.fromSource("\"$name\"")
+            return ProjectIdentifier.fromSource("\"${dictionaryName(name, "--compilation-schema")}\"")
         }
 
         /** The `--schema-paths` mapping, relative to [baseDirectory]; empty when not given. */
@@ -95,11 +96,19 @@ class OracleSettings(
         }
 
         private fun relation(entry: String): Pair<String, String> {
-            val parts = entry.split('.')
-            if (parts.size != 2 || parts.any { it.isEmpty() }) {
+            val name = try {
+                OracleRelationName.parse(entry)
+            } catch (_: IllegalArgumentException) {
                 throw CliValidationException("Invalid --oracle-relations entry '$entry': expected SCHEMA.RELATION")
             }
-            return parts[0] to parts[1]
+            return name.schema to name.name
+        }
+
+        /** [name] as Oracle reads an identifier: unquoted, upper-cased; in double quotes, exactly as written. */
+        private fun dictionaryName(name: String, option: String): String = try {
+            OracleRelationName.dictionaryNameOf(name)
+        } catch (_: IllegalArgumentException) {
+            throw CliValidationException("Invalid $option entry '$name'")
         }
 
         /** `--oracle-public-synonyms`: on when not given. */
@@ -112,8 +121,8 @@ class OracleSettings(
         private fun names(value: String, option: String): List<String> {
             if (value.isBlank()) return emptyList()
             return value.split(',').map { it.trim() }.onEach {
-                if (it.isEmpty() || it.contains('"')) throw CliValidationException("Invalid $option entry '$it': use exact dictionary names, comma-separated")
-            }.distinct()
+                if (it.isEmpty()) throw CliValidationException("Invalid $option entry '$it': names are comma-separated")
+            }
         }
     }
 }

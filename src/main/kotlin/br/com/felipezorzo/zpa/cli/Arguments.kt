@@ -42,16 +42,16 @@ class Arguments {
     @Parameter(names = ["--oracle-password-env"], description = "Name of the environment variable holding the database password")
     var oraclePasswordEnv: String = "ZPA_ORACLE_PASSWORD"
 
-    @Parameter(names = ["--oracle-schemas"], description = "Comma-separated schemas to read completely (exact dictionary names, e.g. HR)")
+    @Parameter(names = ["--oracle-schemas"], description = "Comma-separated schemas to read completely, e.g. HR (unquoted names are upper-cased, quoted ones taken exactly)")
     var oracleSchemas: String = ""
 
-    @Parameter(names = ["--oracle-relations"], description = "Comma-separated SCHEMA.RELATION names to read individually (exact dictionary names)")
+    @Parameter(names = ["--oracle-relations"], description = "Comma-separated SCHEMA.RELATION names to read individually (unquoted names are upper-cased, quoted ones taken exactly)")
     var oracleRelations: String = ""
 
     @Parameter(names = ["--oracle-public-synonyms"], arity = 1, description = "Read every public synonym visible to --oracle-user: true (default) or false")
     var oraclePublicSynonyms: String? = null
 
-    @Parameter(names = ["--compilation-schema"], description = "Schema in which analyzed units without an explicit schema compile (exact dictionary name)")
+    @Parameter(names = ["--compilation-schema"], description = "Schema in which analyzed units without an explicit schema compile (unquoted names are upper-cased, quoted ones taken exactly)")
     var compilationSchema: String = ""
 
     @Parameter(names = ["--schema-paths"], description = "Comma-separated pattern=SCHEMA entries: the schema in which units of files matching each glob (relative to --sources) compile; the first match wins")

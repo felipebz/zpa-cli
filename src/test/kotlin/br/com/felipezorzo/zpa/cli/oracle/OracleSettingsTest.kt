@@ -53,12 +53,28 @@ class OracleSettingsTest {
         assertTrue(failure("--oracle-url", "jdbc:oracle:thin:@db", "--oracle-schemas", "HR").contains("--oracle-user"))
         assertTrue(failure("--oracle-url", "jdbc:oracle:thin:@db", "--oracle-user", "app").contains("--oracle-schemas or --oracle-relations"))
         assertTrue(failure("--oracle-url", "jdbc:oracle:thin:@db", "--oracle-user", "app", "--oracle-relations", "COUNTRIES").contains("SCHEMA.RELATION"))
-        assertTrue(failure("--oracle-url", "jdbc:oracle:thin:@db", "--oracle-user", "app", "--oracle-schemas", "\"hr\"").contains("exact dictionary names"))
+        assertTrue(failure("--oracle-url", "jdbc:oracle:thin:@db", "--oracle-user", "app", "--oracle-schemas", "h\"r").contains("--oracle-schemas"))
+        assertTrue(failure("--oracle-url", "jdbc:oracle:thin:@db", "--oracle-user", "app", "--oracle-relations", "\"ref.countries").contains("SCHEMA.RELATION"))
         assertTrue(failure("--syntax-only", "--oracle-url", "jdbc:oracle:thin:@db").contains("--syntax-only"))
         assertTrue(failure("--syntax-only", "--compilation-schema", "HR").contains("--syntax-only"))
         val missing = failure("--oracle-url", "jdbc:oracle:thin:@db", "--oracle-user", "app", "--oracle-schemas", "HR", environment = emptyMap())
         assertTrue(missing.contains("'ZPA_ORACLE_PASSWORD' is not set"))
-        assertFailsWith<CliValidationException> { OracleSettings.compilationSchema(args("--compilation-schema", "\"HR\"")) }
+        assertFailsWith<CliValidationException> { OracleSettings.compilationSchema(args("--compilation-schema", "h\"r")) }
+    }
+
+    @Test
+    fun namesAreReadAsOracleReadsIdentifiers() {
+        val settings = settings(
+            "--oracle-url", "jdbc:oracle:thin:@ledgerdb", "--oracle-user", "clerk",
+            "--oracle-schemas", "ledger, LEDGER, \"Mixed\"", "--oracle-relations", "ref.countries, \"ref\".\"Odd.Name\""
+        )!!
+        // Unquoted, upper-cased; quoted, exactly as written.
+        assertEquals(listOf("LEDGER", "Mixed"), settings.schemas)
+        assertEquals(listOf("REF" to "COUNTRIES", "ref" to "Odd.Name"), settings.relations)
+        val lower = OracleSettings.compilationSchema(args("--compilation-schema", "ledger"))!!
+        assertEquals(OracleSettings.compilationSchema(args("--compilation-schema", "LEDGER")), lower)
+        assertEquals("\"LEDGER\"", lower.toString())
+        assertEquals("\"ledger\"", OracleSettings.compilationSchema(args("--compilation-schema", "\"ledger\""))!!.toString())
     }
 
     @Test
