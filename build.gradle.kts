@@ -94,7 +94,7 @@ data class Jdk(val arch: String, val os: String, val extension: String, val plat
 }
 
 val baseJdkUrl = "https://download.bell-sw.com/java"
-val jdkBuild = "25.0.4.1+1"
+val jdkBuild = "25.0.5.1+5"
 val jdkVersion = jdkBuild.split('+').first()
 val jdksToBuild = listOf(
     Jdk(arch = "amd64", os = "linux", extension = "tar.gz"),
