@@ -13,6 +13,23 @@
             "managerFilePatterns": ["/(^|/)gradle\\.properties$/"],
             "matchStrings": ["zpaOracleImage=(?<depName>gvenzl/oracle-free):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"],
             "datasourceTemplate": "docker"
+        },
+        {
+            "customType": "regex",
+            "description": "Liberica JDK embedded in the distributions by jlink",
+            "managerFilePatterns": ["/(^|/)build\\.gradle\\.kts$/"],
+            "matchStrings": ["val jdkBuild = \"(?<currentValue>[^\"]+)\""],
+            "depNameTemplate": "bell-sw/Liberica",
+            "datasourceTemplate": "github-releases",
+            "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(\\.(?<build>\\d+))?\\+(?<revision>\\d+)$"
+        }
+    ],
+    "packageRules": [
+        {
+            "description": "Stay on the JDK 25 line; moving to another LTS is a decision of its own",
+            "matchDatasources": ["github-releases"],
+            "matchPackageNames": ["bell-sw/Liberica"],
+            "allowedVersions": "/^25\\./"
         }
     ]
 }

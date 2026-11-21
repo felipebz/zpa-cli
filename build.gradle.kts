@@ -89,65 +89,42 @@ publishing {
     }
 }
 
-data class Jdk(val arch: String, val os: String, val extension: String, val checksum: String, val platform: String = os)
+data class Jdk(val arch: String, val os: String, val extension: String, val platform: String = os) {
+    fun fileName(build: String) = "bellsoft-jdk$build-$os-$arch.$extension"
+}
 
 val baseJdkUrl = "https://download.bell-sw.com/java"
 val jdkBuild = "25.0.4.1+1"
 val jdkVersion = jdkBuild.split('+').first()
 val jdksToBuild = listOf(
-    Jdk(
-        arch = "amd64",
-        os = "linux",
-        extension = "tar.gz",
-        checksum = "4fd81f4fb5cbf77006a3973aaf110f8d7968f8dd"
-    ),
-
-    Jdk(
-        arch = "aarch64",
-        os = "linux",
-        extension = "tar.gz",
-        checksum = "bf7f3596ed67f60b55b0c7f10b99b14493c535db"
-    ),
-
-    Jdk(
-        arch = "amd64",
-        os = "macos",
-        extension = "tar.gz",
-        checksum = "d727bb63bee69f1a01618b45b4a9852570829447",
-        platform = "osx"
-    ),
-
-    Jdk(
-        arch = "aarch64",
-        os = "macos",
-        extension = "tar.gz",
-        checksum = "48b4888e440ee82ea6f023dde840e3dcac395609",
-        platform = "osx"
-    ),
-
-    Jdk(
-        arch = "amd64",
-        os = "windows",
-        extension = "zip",
-        checksum = "841be12d9058794e067d206f4cd36a4056d4ca3a"
-    ),
-
-    Jdk(
-        arch = "x64-musl",
-        os = "linux",
-        extension = "tar.gz",
-        checksum = "e9ee84bdaacf42b2378fa8b8f4151f864ebc5b23",
-        platform = "linux_musl"
-    ),
+    Jdk(arch = "amd64", os = "linux", extension = "tar.gz"),
+    Jdk(arch = "aarch64", os = "linux", extension = "tar.gz"),
+    Jdk(arch = "amd64", os = "macos", extension = "tar.gz", platform = "osx"),
+    Jdk(arch = "aarch64", os = "macos", extension = "tar.gz", platform = "osx"),
+    Jdk(arch = "amd64", os = "windows", extension = "zip"),
+    Jdk(arch = "x64-musl", os = "linux", extension = "tar.gz", platform = "linux_musl"),
 )
+
+val jdkChecksums: Map<String, String> by lazy {
+    uri("$baseJdkUrl/$jdkBuild/sha1sum.txt").toURL().readText().lines()
+        .mapNotNull { line -> line.trim().split(Regex("\\s+"), limit = 2).takeIf { it.size == 2 } }
+        .associate { (checksum, fileName) -> fileName.removePrefix("*") to checksum }
+}
 
 jdks {
     jdksToBuild.forEach {
         create("${it.platform}_${it.arch}") {
             platform.set(it.platform)
-            url.set("$baseJdkUrl/$jdkBuild/bellsoft-jdk${jdkBuild}-${it.os}-${it.arch}.${it.extension}")
-            checksum.set("SHA-1/${it.checksum}")
+            url.set("$baseJdkUrl/$jdkBuild/${it.fileName(jdkBuild)}")
+            checksum.set("SHA-1/0")
         }
+    }
+}
+
+tasks.withType<de.undercouch.gradle.tasks.download.Verify>().configureEach {
+    doFirst {
+        val fileName = (src as File).name
+        checksum(jdkChecksums[fileName] ?: throw GradleException("No checksum for $fileName in $baseJdkUrl/$jdkBuild/sha1sum.txt"))
     }
 }
 
